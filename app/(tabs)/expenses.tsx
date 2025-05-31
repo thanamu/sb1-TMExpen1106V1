@@ -15,7 +15,6 @@ import { useData, Expense } from '@/context/DataContext';
 import { Camera, DollarSign, Calendar, Receipt, Plus, ChevronDown, X } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 
-// Expense categories with their associated colors
 const EXPENSE_CATEGORIES = [
   { label: 'Grocery', color: '#4CAF50' },
   { label: 'Café', color: '#795548' },
@@ -25,13 +24,11 @@ const EXPENSE_CATEGORIES = [
   { label: 'Other', color: '#607D8B' },
 ] as const;
 
-// Date options for quick selection
 const DATE_OPTIONS = ['Yesterday', 'Today', 'Tomorrow'];
 
 const ExpensesScreen = () => {
   const { expenses, addExpense, deleteExpense, expenseSummary } = useData();
   
-  // Form state
   const [isAddingExpense, setIsAddingExpense] = useState(false);
   const [category, setCategory] = useState<Expense['category']>('Grocery');
   const [amount, setAmount] = useState('');
@@ -39,20 +36,27 @@ const ExpensesScreen = () => {
   const [displayDate, setDisplayDate] = useState('Today');
   const [hasReceipt, setHasReceipt] = useState(false);
   
-  // Entertainment specific fields
   const [entertainmentType, setEntertainmentType] = useState('');
   const [entertainmentCost, setEntertainmentCost] = useState('');
   const [travelCost, setTravelCost] = useState('');
   const [foodCost, setFoodCost] = useState('');
   
-  // Modal states
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showDateModal, setShowDateModal] = useState(false);
   const [showEntertainmentModal, setShowEntertainmentModal] = useState(false);
   
-  // Filter state
   const [activeFilter, setActiveFilter] = useState<'all' | 'daily' | 'weekly' | 'monthly'>('all');
-  
+
+  // Additional state for category-specific fields
+  const [cafeName, setCafeName] = useState('');
+  const [foodDescription, setFoodDescription] = useState('');
+  const [numberOfPatrons, setNumberOfPatrons] = useState('');
+  const [restaurantName, setRestaurantName] = useState('');
+  const [restaurantFoodDescription, setRestaurantFoodDescription] = useState('');
+  const [restaurantPatrons, setRestaurantPatrons] = useState('');
+  const [shopName, setShopName] = useState('');
+  const [itemDescription, setItemDescription] = useState('');
+
   const resetForm = () => {
     setCategory('Grocery');
     setAmount('');
@@ -63,8 +67,17 @@ const ExpensesScreen = () => {
     setEntertainmentCost('');
     setTravelCost('');
     setFoodCost('');
+    // Reset category-specific fields
+    setCafeName('');
+    setFoodDescription('');
+    setNumberOfPatrons('');
+    setRestaurantName('');
+    setRestaurantFoodDescription('');
+    setRestaurantPatrons('');
+    setShopName('');
+    setItemDescription('');
   };
-  
+
   const handleAddExpense = () => {
     if (!amount) {
       Alert.alert('Error', 'Please enter an amount');
@@ -85,13 +98,35 @@ const ExpensesScreen = () => {
       hasReceipt,
     };
     
-    // Add entertainment specific fields if applicable
-    if (category === 'Entertainment') {
+    // Add category-specific fields
+    if (category === 'Café') {
+      if (!cafeName || !foodDescription || !numberOfPatrons) {
+        Alert.alert('Error', 'Please fill in all café details');
+        return;
+      }
+      newExpense.cafeName = cafeName;
+      newExpense.foodDescription = foodDescription;
+      newExpense.numberOfPatrons = parseInt(numberOfPatrons);
+    } else if (category === 'Restaurant') {
+      if (!restaurantName || !restaurantFoodDescription || !restaurantPatrons) {
+        Alert.alert('Error', 'Please fill in all restaurant details');
+        return;
+      }
+      newExpense.restaurantName = restaurantName;
+      newExpense.restaurantFoodDescription = restaurantFoodDescription;
+      newExpense.restaurantPatrons = parseInt(restaurantPatrons);
+    } else if (category === 'Shopping') {
+      if (!shopName || !itemDescription) {
+        Alert.alert('Error', 'Please fill in all shopping details');
+        return;
+      }
+      newExpense.shopName = shopName;
+      newExpense.itemDescription = itemDescription;
+    } else if (category === 'Entertainment') {
       if (!entertainmentType) {
         Alert.alert('Error', 'Please enter entertainment type');
         return;
       }
-      
       newExpense.entertainmentType = entertainmentType;
       newExpense.entertainmentCost = entertainmentCost ? parseFloat(entertainmentCost) : undefined;
       newExpense.travelCost = travelCost ? parseFloat(travelCost) : undefined;
@@ -102,12 +137,11 @@ const ExpensesScreen = () => {
     setIsAddingExpense(false);
     resetForm();
   };
-  
+
   const handleSelectCategory = (selectedCategory: Expense['category']) => {
     setCategory(selectedCategory);
     setShowCategoryModal(false);
     
-    // Show entertainment details modal if Entertainment is selected
     if (selectedCategory === 'Entertainment') {
       setShowEntertainmentModal(true);
     }
@@ -140,13 +174,10 @@ const ExpensesScreen = () => {
   };
   
   const handleScanReceipt = () => {
-    // In a real app, this would open the camera or image picker
-    // For demo purposes, we'll just toggle the receipt state
     setHasReceipt(!hasReceipt);
     Alert.alert('Success', 'Receipt scanned successfully');
   };
   
-  // Filter expenses based on the active filter
   const getFilteredExpenses = () => {
     if (activeFilter === 'all') return expenses;
     
@@ -182,12 +213,10 @@ const ExpensesScreen = () => {
   
   const filteredExpenses = getFilteredExpenses();
   
-  // Get category color
   const getCategoryColor = (category: Expense['category']) => {
     return EXPENSE_CATEGORIES.find(c => c.label === category)?.color || '#607D8B';
   };
   
-  // Format date for display
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
       year: 'numeric', 
@@ -197,12 +226,10 @@ const ExpensesScreen = () => {
     return new Date(dateString).toLocaleDateString('en-AU', options);
   };
   
-  // Calculate total for the filtered expenses
   const calculateTotal = (expenses: Expense[]) => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   };
   
-  // Render expense item
   const renderExpenseItem = ({ item }: { item: Expense }) => (
     <Animated.View 
       entering={FadeInUp.delay(100 * parseInt(item.id) % 10).duration(400)}
@@ -222,6 +249,29 @@ const ExpensesScreen = () => {
           </View>
         )}
       </View>
+      
+      {item.category === 'Café' && (
+        <View style={styles.categoryDetails}>
+          <Text style={styles.detailText}>Café: {item.cafeName}</Text>
+          <Text style={styles.detailText}>Order: {item.foodDescription}</Text>
+          <Text style={styles.detailText}>Patrons: {item.numberOfPatrons}</Text>
+        </View>
+      )}
+      
+      {item.category === 'Restaurant' && (
+        <View style={styles.categoryDetails}>
+          <Text style={styles.detailText}>Restaurant: {item.restaurantName}</Text>
+          <Text style={styles.detailText}>Order: {item.restaurantFoodDescription}</Text>
+          <Text style={styles.detailText}>Patrons: {item.restaurantPatrons}</Text>
+        </View>
+      )}
+      
+      {item.category === 'Shopping' && (
+        <View style={styles.categoryDetails}>
+          <Text style={styles.detailText}>Shop: {item.shopName}</Text>
+          <Text style={styles.detailText}>Items: {item.itemDescription}</Text>
+        </View>
+      )}
       
       {item.category === 'Entertainment' && item.entertainmentType && (
         <View style={styles.entertainmentDetails}>
@@ -260,7 +310,6 @@ const ExpensesScreen = () => {
   
   return (
     <View style={styles.container}>
-      {/* Filter Tabs */}
       <View style={styles.filterContainer}>
         <TouchableOpacity
           style={[styles.filterTab, activeFilter === 'all' && styles.activeFilterTab]}
@@ -299,7 +348,6 @@ const ExpensesScreen = () => {
         </TouchableOpacity>
       </View>
       
-      {/* Expenses List */}
       <View style={styles.listContainer}>
         {filteredExpenses.length > 0 ? (
           <FlatList
@@ -325,7 +373,6 @@ const ExpensesScreen = () => {
         )}
       </View>
       
-      {/* Add Expense Button */}
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => setIsAddingExpense(true)}
@@ -333,7 +380,6 @@ const ExpensesScreen = () => {
         <Plus size={24} color="#FFFFFF" />
       </TouchableOpacity>
       
-      {/* Add Expense Modal */}
       <Modal
         visible={isAddingExpense}
         animationType="slide"
@@ -359,7 +405,6 @@ const ExpensesScreen = () => {
             </View>
             
             <ScrollView style={styles.formContainer}>
-              {/* Category Selector */}
               <Text style={styles.inputLabel}>Category</Text>
               <TouchableOpacity
                 style={styles.selector}
@@ -370,7 +415,6 @@ const ExpensesScreen = () => {
                 <ChevronDown size={18} color="#666666" />
               </TouchableOpacity>
               
-              {/* Amount Input */}
               <Text style={styles.inputLabel}>Amount</Text>
               <View style={styles.amountInputContainer}>
                 <DollarSign size={18} color="#666666" style={styles.inputIcon} />
@@ -383,7 +427,6 @@ const ExpensesScreen = () => {
                 />
               </View>
               
-              {/* Date Selector */}
               <Text style={styles.inputLabel}>Date</Text>
               <TouchableOpacity
                 style={styles.selector}
@@ -394,7 +437,6 @@ const ExpensesScreen = () => {
                 <ChevronDown size={18} color="#666666" />
               </TouchableOpacity>
               
-              {/* Receipt Scan Button */}
               <TouchableOpacity
                 style={[styles.scanButton, hasReceipt && styles.scannedButton]}
                 onPress={handleScanReceipt}
@@ -405,7 +447,90 @@ const ExpensesScreen = () => {
                 </Text>
               </TouchableOpacity>
               
-              {/* Entertainment Details (if applicable) */}
+              {category === 'Café' && (
+                <View style={styles.categoryDetails}>
+                  <Text style={styles.sectionTitle}>Café Details</Text>
+                  
+                  <TextInput 
+                    style={styles.input}
+                    placeholder="Café Name"
+                    placeholderTextColor="#999999"
+                    value={cafeName}
+                    onChangeText={setCafeName}
+                  />
+                  
+                  <TextInput 
+                    style={styles.input}
+                    placeholder="Food Description"
+                    placeholderTextColor="#999999"
+                    value={foodDescription}
+                    onChangeText={setFoodDescription}
+                  />
+                  
+                  <TextInput 
+                    style={styles.input}
+                    placeholder="Number of Patrons"
+                    placeholderTextColor="#999999"
+                    value={numberOfPatrons}
+                    onChangeText={setNumberOfPatrons}
+                    keyboardType="numeric"
+                  />
+                </View>
+              )}
+
+              {category === 'Restaurant' && (
+                <View style={styles.categoryDetails}>
+                  <Text style={styles.sectionTitle}>Restaurant Details</Text>
+                  
+                  <TextInput 
+                    style={styles.input}
+                    placeholder="Restaurant Name"
+                    placeholderTextColor="#999999"
+                    value={restaurantName}
+                    onChangeText={setRestaurantName}
+                  />
+                  
+                  <TextInput 
+                    style={styles.input}
+                    placeholder="Food Description"
+                    placeholderTextColor="#999999"
+                    value={restaurantFoodDescription}
+                    onChangeText={setRestaurantFoodDescription}
+                  />
+                  
+                  <TextInput 
+                    style={styles.input}
+                    placeholder="Number of Patrons"
+                    placeholderTextColor="#999999"
+                    value={restaurantPatrons}
+                    onChangeText={setRestaurantPatrons}
+                    keyboardType="numeric"
+                  />
+                </View>
+              )}
+
+              {category === 'Shopping' && (
+                <View style={styles.categoryDetails}>
+                  <Text style={styles.sectionTitle}>Shopping Details</Text>
+                  
+                  <TextInput 
+                    style={styles.input}
+                    placeholder="Shop Name"
+                    placeholderTextColor="#999999"
+                    value={shopName}
+                    onChangeText={setShopName}
+                  />
+                  
+                  <TextInput 
+                    style={styles.input}
+                    placeholder="Item Description"
+                    placeholderTextColor="#999999"
+                    value={itemDescription}
+                    onChangeText={setItemDescription}
+                  />
+                </View>
+              )}
+              
               {category === 'Entertainment' && (
                 <View style={styles.entertainmentForm}>
                   <Text style={styles.sectionTitle}>Entertainment Details</Text>
@@ -467,7 +592,6 @@ const ExpensesScreen = () => {
         </View>
       </Modal>
       
-      {/* Category Selection Modal */}
       <Modal
         visible={showCategoryModal}
         animationType="fade"
@@ -503,7 +627,6 @@ const ExpensesScreen = () => {
         </TouchableOpacity>
       </Modal>
       
-      {/* Date Selection Modal */}
       <Modal
         visible={showDateModal}
         animationType="fade"
@@ -548,7 +671,6 @@ const ExpensesScreen = () => {
         </TouchableOpacity>
       </Modal>
       
-      {/* Entertainment Details Modal */}
       <Modal
         visible={showEntertainmentModal}
         animationType="fade"
@@ -1031,6 +1153,28 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     fontSize: 16,
     color: '#FFFFFF',
+  },
+  categoryDetails: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#EEEEEE',
+  },
+  detailText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#666666',
+    marginBottom: 4,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#333333',
   },
 });
 

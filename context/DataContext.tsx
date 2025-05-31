@@ -47,6 +47,20 @@ export type Expense = {
   entertainmentCost?: number;
   travelCost?: number;
   foodCost?: number;
+
+  // Café specific fields
+  cafeName?: string;
+  foodDescription?: string;
+  numberOfPatrons?: number;
+
+  // Restaurant specific fields
+  restaurantName?: string;
+  restaurantFoodDescription?: string;
+  restaurantPatrons?: number;
+
+  // Shopping specific fields
+  shopName?: string;
+  itemDescription?: string;
 };
 
 export type Activity = {

@@ -79,24 +79,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // In a real app, this would validate with a server
-      // For demo, we're checking local storage
       const usersJson = await storage.getItem('users');
       const users = usersJson ? JSON.parse(usersJson) : [];
       
-      const user = users.find((u: any) => 
-        u.email.toLowerCase() === email.toLowerCase() && u.password === password
+      const existingUser = users.find((u: any) => 
+        u.email.toLowerCase() === email.toLowerCase()
       );
-      
-      if (user) {
-        // Store user data in storage
-        const { password, ...userWithoutPassword } = user;
-        await storage.setItem('user', JSON.stringify(userWithoutPassword));
-        setUser(userWithoutPassword);
-        return true;
+
+      if (!existingUser) {
+        return false; // User doesn't exist
       }
-      
-      return false;
+
+      if (existingUser.password !== password) {
+        return false; // Wrong password
+      }
+
+      // Store user data in storage and state (excluding password)
+      const { password: _, ...userWithoutPassword } = existingUser;
+      await storage.setItem('user', JSON.stringify(userWithoutPassword));
+      setUser(userWithoutPassword);
+      return true;
+
     } catch (error) {
       console.error('Login error:', error);
       return false;
@@ -112,8 +115,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ): Promise<boolean> => {
     setIsLoading(true);
     try {
-      // In a real app, this would send data to a server
-      // For demo, we're storing locally
       const usersJson = await storage.getItem('users');
       const users = usersJson ? JSON.parse(usersJson) : [];
       

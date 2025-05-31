@@ -7,7 +7,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 export default function Login() {
   const router = useRouter();
-  const { login, register, isLoading } = useAuth();
+  const { login, isLoading } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,24 +26,11 @@ export default function Login() {
       if (success) {
         router.replace('/(tabs)');
       } else {
-        // Check if the user exists, if not, they need to register
-        const userExists = await checkUserExists(email);
-        if (!userExists) {
-          router.push('/onboarding');
-        } else {
-          setError('Invalid email or password');
-        }
+        setError('Invalid email or password');
       }
     } catch (err) {
       setError('Login failed. Please try again.');
     }
-  };
-
-  // This is a mock function - in a real app, this would check against a database
-  const checkUserExists = async (email: string) => {
-    // For demonstration purposes, we're simulating that users don't exist
-    // so they go through onboarding
-    return false;
   };
 
   const goBack = () => {

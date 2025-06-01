@@ -14,7 +14,7 @@ import { Car, Plus, X, Calendar, DollarSign, Receipt, ChevronDown } from 'lucide
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 export default function ExpensesScreen() {
-  const { expenses, addExpense, vehicles } = useData();
+  const { expenses, addExpense, vehicles, addVehicleExpense } = useData();
   const [isAddingExpense, setIsAddingExpense] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [category, setCategory] = useState('');
@@ -22,6 +22,19 @@ export default function ExpensesScreen() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [hasReceipt, setHasReceipt] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showVehicleModal, setShowVehicleModal] = useState(false);
+  const [showExpenseTypeModal, setShowExpenseTypeModal] = useState(false);
+  const [expenseType, setExpenseType] = useState('');
+  
+  // Additional fields for vehicle expenses
+  const [fuelType, setFuelType] = useState('');
+  const [insuranceType, setInsuranceType] = useState('');
+  const [inspectionDate, setInspectionDate] = useState('');
+  const [registrationDate, setRegistrationDate] = useState('');
+  const [serviceNotes, setServiceNotes] = useState('');
+  const [consumableType, setConsumableType] = useState('');
+  const [showConsumableTypeModal, setShowConsumableTypeModal] = useState(false);
+  const [showFuelTypeModal, setShowFuelTypeModal] = useState(false);
 
   const categories = [
     'Grocery',
@@ -33,34 +46,104 @@ export default function ExpensesScreen() {
     'Other'
   ];
 
+  const vehicleExpenseTypes = [
+    'Fuel',
+    'Insurance',
+    'Registration',
+    'Service',
+    'Consumable'
+  ];
+
+  const fuelTypes = ['ICE Fuel', 'EV'];
+  
+  const consumableTypes = [
+    'Tyres',
+    'Wiper Blades',
+    'Engine Oil',
+    'Other'
+  ];
+
   const resetForm = () => {
     setCategory('');
     setAmount('');
     setDate(new Date().toISOString().split('T')[0]);
     setHasReceipt(false);
     setSelectedVehicle(null);
+    setExpenseType('');
+    setFuelType('');
+    setInsuranceType('');
+    setInspectionDate('');
+    setRegistrationDate('');
+    setServiceNotes('');
+    setConsumableType('');
   };
 
   const handleAddExpense = () => {
-    if (!category || !amount) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
+    if (category === 'Vehicles') {
+      if (!selectedVehicle || !expenseType || !amount) {
+        Alert.alert('Error', 'Please fill in all required fields');
+        return;
+      }
+
+      const parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        Alert.alert('Error', 'Please enter a valid amount');
+        return;
+      }
+
+      const vehicleExpense = {
+        vehicleId: selectedVehicle.id,
+        type: expenseType,
+        date,
+        amount: parsedAmount,
+        hasReceipt,
+      };
+
+      // Add type-specific fields
+      switch (expenseType) {
+        case 'Fuel':
+          vehicleExpense.fuelType = fuelType;
+          break;
+        case 'Insurance':
+          vehicleExpense.insuranceType = insuranceType;
+          break;
+        case 'Registration':
+          vehicleExpense.registrationDate = registrationDate;
+          if (inspectionDate) {
+            vehicleExpense.inspectionDate = inspectionDate;
+          }
+          break;
+        case 'Service':
+          vehicleExpense.serviceNotes = serviceNotes;
+          break;
+        case 'Consumable':
+          vehicleExpense.consumableType = consumableType;
+          break;
+      }
+
+      addVehicleExpense(vehicleExpense);
+    } else {
+      if (!category || !amount) {
+        Alert.alert('Error', 'Please fill in all required fields');
+        return;
+      }
+
+      const parsedAmount = parseFloat(amount);
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        Alert.alert('Error', 'Please enter a valid amount');
+        return;
+      }
+
+      const newExpense = {
+        category,
+        amount: parsedAmount,
+        date,
+        hasReceipt
+      };
+
+      addExpense(newExpense);
     }
 
-    const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {
-      Alert.alert('Error', 'Please enter a valid amount');
-      return;
-    }
-
-    const newExpense = {
-      category,
-      amount: parsedAmount,
-      date,
-      hasReceipt
-    };
-
-    addExpense(newExpense);
     setIsAddingExpense(false);
     resetForm();
   };
@@ -68,6 +151,118 @@ export default function ExpensesScreen() {
   const handleScanReceipt = () => {
     setHasReceipt(!hasReceipt);
     Alert.alert('Success', 'Receipt scanned successfully');
+  };
+
+  const renderVehicleExpenseFields = () => {
+    if (category !== 'Vehicles') return null;
+
+    return (
+      <>
+        <Text style={styles.inputLabel}>Vehicle</Text>
+        <TouchableOpacity
+          style={styles.selector}
+          onPress={() => setShowVehicleModal(true)}
+        >
+          <Car size={20} color="#666666" style={styles.inputIcon} />
+          <Text style={styles.selectorText}>
+            {selectedVehicle ? 
+              `${selectedVehicle.year} ${selectedVehicle.make} ${selectedVehicle.model}` : 
+              'Select vehicle'}
+          </Text>
+          <ChevronDown size={20} color="#666666" />
+        </TouchableOpacity>
+
+        {selectedVehicle && (
+          <>
+            <Text style={styles.inputLabel}>Expense Type</Text>
+            <TouchableOpacity
+              style={styles.selector}
+              onPress={() => setShowExpenseTypeModal(true)}
+            >
+              <Text style={styles.selectorText}>
+                {expenseType || 'Select expense type'}
+              </Text>
+              <ChevronDown size={20} color="#666666" />
+            </TouchableOpacity>
+
+            {expenseType === 'Fuel' && (
+              <>
+                <Text style={styles.inputLabel}>Fuel Type</Text>
+                <TouchableOpacity
+                  style={styles.selector}
+                  onPress={() => setShowFuelTypeModal(true)}
+                >
+                  <Text style={styles.selectorText}>
+                    {fuelType || 'Select fuel type'}
+                  </Text>
+                  <ChevronDown size={20} color="#666666" />
+                </TouchableOpacity>
+              </>
+            )}
+
+            {expenseType === 'Insurance' && (
+              <>
+                <Text style={styles.inputLabel}>Insurance Type</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter insurance type"
+                  value={insuranceType}
+                  onChangeText={setInsuranceType}
+                />
+              </>
+            )}
+
+            {expenseType === 'Registration' && (
+              <>
+                <Text style={styles.inputLabel}>Registration Date</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="YYYY-MM-DD"
+                  value={registrationDate}
+                  onChangeText={setRegistrationDate}
+                />
+                <Text style={styles.inputLabel}>Inspection Date</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="YYYY-MM-DD"
+                  value={inspectionDate}
+                  onChangeText={setInspectionDate}
+                />
+              </>
+            )}
+
+            {expenseType === 'Service' && (
+              <>
+                <Text style={styles.inputLabel}>Service Notes</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Enter service details"
+                  value={serviceNotes}
+                  onChangeText={setServiceNotes}
+                  multiline
+                  numberOfLines={4}
+                />
+              </>
+            )}
+
+            {expenseType === 'Consumable' && (
+              <>
+                <Text style={styles.inputLabel}>Consumable Type</Text>
+                <TouchableOpacity
+                  style={styles.selector}
+                  onPress={() => setShowConsumableTypeModal(true)}
+                >
+                  <Text style={styles.selectorText}>
+                    {consumableType || 'Select consumable type'}
+                  </Text>
+                  <ChevronDown size={20} color="#666666" />
+                </TouchableOpacity>
+              </>
+            )}
+          </>
+        )}
+      </>
+    );
   };
 
   return (
@@ -150,6 +345,8 @@ export default function ExpensesScreen() {
                 <ChevronDown size={20} color="#666666" />
               </TouchableOpacity>
 
+              {renderVehicleExpenseFields()}
+
               <Text style={styles.inputLabel}>Amount</Text>
               <View style={styles.inputContainer}>
                 <DollarSign size={20} color="#666666" style={styles.inputIcon} />
@@ -218,6 +415,128 @@ export default function ExpensesScreen() {
                 }}
               >
                 <Text style={styles.pickerItemText}>{cat}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Vehicle Selection Modal */}
+      <Modal
+        visible={showVehicleModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowVehicleModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowVehicleModal(false)}
+        >
+          <View style={styles.pickerModal}>
+            <Text style={styles.pickerTitle}>Select Vehicle</Text>
+            {vehicles.map((vehicle) => (
+              <TouchableOpacity
+                key={vehicle.id}
+                style={styles.pickerItem}
+                onPress={() => {
+                  setSelectedVehicle(vehicle);
+                  setShowVehicleModal(false);
+                }}
+              >
+                <Text style={styles.pickerItemText}>
+                  {vehicle.year} {vehicle.make} {vehicle.model}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Expense Type Selection Modal */}
+      <Modal
+        visible={showExpenseTypeModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowExpenseTypeModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowExpenseTypeModal(false)}
+        >
+          <View style={styles.pickerModal}>
+            <Text style={styles.pickerTitle}>Select Expense Type</Text>
+            {vehicleExpenseTypes.map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={styles.pickerItem}
+                onPress={() => {
+                  setExpenseType(type);
+                  setShowExpenseTypeModal(false);
+                }}
+              >
+                <Text style={styles.pickerItemText}>{type}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Fuel Type Selection Modal */}
+      <Modal
+        visible={showFuelTypeModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowFuelTypeModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowFuelTypeModal(false)}
+        >
+          <View style={styles.pickerModal}>
+            <Text style={styles.pickerTitle}>Select Fuel Type</Text>
+            {fuelTypes.map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={styles.pickerItem}
+                onPress={() => {
+                  setFuelType(type);
+                  setShowFuelTypeModal(false);
+                }}
+              >
+                <Text style={styles.pickerItemText}>{type}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Consumable Type Selection Modal */}
+      <Modal
+        visible={showConsumableTypeModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowConsumableTypeModal(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setShowConsumableTypeModal(false)}
+        >
+          <View style={styles.pickerModal}>
+            <Text style={styles.pickerTitle}>Select Consumable Type</Text>
+            {consumableTypes.map((type) => (
+              <TouchableOpacity
+                key={type}
+                style={styles.pickerItem}
+                onPress={() => {
+                  setConsumableType(type);
+                  setShowConsumableTypeModal(false);
+                }}
+              >
+                <Text style={styles.pickerItemText}>{type}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -385,6 +704,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 16,
     color: '#333333',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
+    borderRadius: 8,
+  },
+  textArea: {
+    minHeight: 100,
+    textAlignVertical: 'top',
   },
   scanButton: {
     flexDirection: 'row',

@@ -87,7 +87,7 @@ export type VehicleExpense = {
 export type Expense = {
   id: string;
   userId: string;
-  category: 'Grocery' | 'Café' | 'Restaurant' | 'Shopping' | 'Entertainment' | 'Other';
+  category: 'Grocery' | 'Café' | 'Restaurant' | 'Shopping' | 'Entertainment' | 'Vehicles' | 'Other';
   amount: number;
   date: string;
   hasReceipt: boolean;

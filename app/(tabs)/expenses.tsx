@@ -10,7 +10,7 @@ import {
   Alert
 } from 'react-native';
 import { useData } from '@/context/DataContext';
-import { Car, Plus, X, Calendar, DollarSign, Receipt, ChevronDown, AlertCircle } from 'lucide-react-native';
+import { Car, Plus, X, Calendar, DollarSign, Receipt, ChevronDown, CircleAlert as AlertCircle } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 export default function ExpensesScreen() {

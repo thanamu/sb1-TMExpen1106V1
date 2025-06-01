@@ -10,7 +10,7 @@ import {
   Alert
 } from 'react-native';
 import { useData } from '@/context/DataContext';
-import { Car, Plus, X, Calendar, DollarSign, Receipt, ChevronDown } from 'lucide-react-native';
+import { Car, Plus, X, Calendar, DollarSign, Receipt, ChevronDown, AlertCircle } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 export default function ExpensesScreen() {
@@ -78,6 +78,14 @@ export default function ExpensesScreen() {
     setConsumableType('');
   };
 
+  const validateDate = (dateString: string) => {
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(dateString)) return false;
+    
+    const date = new Date(dateString);
+    return date instanceof Date && !isNaN(date.getTime());
+  };
+
   const handleAddExpense = () => {
     if (category === 'Vehicles') {
       if (!selectedVehicle || !expenseType || !amount) {
@@ -91,6 +99,18 @@ export default function ExpensesScreen() {
         return;
       }
 
+      // Validate dates based on expense type
+      if (expenseType === 'Registration') {
+        if (!validateDate(registrationDate)) {
+          Alert.alert('Error', 'Please enter a valid registration date (YYYY-MM-DD)');
+          return;
+        }
+        if (inspectionDate && !validateDate(inspectionDate)) {
+          Alert.alert('Error', 'Please enter a valid inspection date (YYYY-MM-DD)');
+          return;
+        }
+      }
+
       const vehicleExpense = {
         vehicleId: selectedVehicle.id,
         type: expenseType,
@@ -102,9 +122,17 @@ export default function ExpensesScreen() {
       // Add type-specific fields
       switch (expenseType) {
         case 'Fuel':
+          if (!fuelType) {
+            Alert.alert('Error', 'Please select a fuel type');
+            return;
+          }
           vehicleExpense.fuelType = fuelType;
           break;
         case 'Insurance':
+          if (!insuranceType.trim()) {
+            Alert.alert('Error', 'Please enter an insurance type');
+            return;
+          }
           vehicleExpense.insuranceType = insuranceType;
           break;
         case 'Registration':
@@ -114,9 +142,17 @@ export default function ExpensesScreen() {
           }
           break;
         case 'Service':
+          if (!serviceNotes.trim()) {
+            Alert.alert('Error', 'Please enter service notes');
+            return;
+          }
           vehicleExpense.serviceNotes = serviceNotes;
           break;
         case 'Consumable':
+          if (!consumableType) {
+            Alert.alert('Error', 'Please select a consumable type');
+            return;
+          }
           vehicleExpense.consumableType = consumableType;
           break;
       }
@@ -131,6 +167,11 @@ export default function ExpensesScreen() {
       const parsedAmount = parseFloat(amount);
       if (isNaN(parsedAmount) || parsedAmount <= 0) {
         Alert.alert('Error', 'Please enter a valid amount');
+        return;
+      }
+
+      if (!validateDate(date)) {
+        Alert.alert('Error', 'Please enter a valid date (YYYY-MM-DD)');
         return;
       }
 
@@ -155,6 +196,17 @@ export default function ExpensesScreen() {
 
   const renderVehicleExpenseFields = () => {
     if (category !== 'Vehicles') return null;
+
+    if (vehicles.length === 0) {
+      return (
+        <View style={styles.warningContainer}>
+          <AlertCircle size={20} color="#FFA000" />
+          <Text style={styles.warningText}>
+            Please add a vehicle in the Vehicles tab before adding vehicle expenses
+          </Text>
+        </View>
+      );
+    }
 
     return (
       <>
@@ -221,7 +273,7 @@ export default function ExpensesScreen() {
                   value={registrationDate}
                   onChangeText={setRegistrationDate}
                 />
-                <Text style={styles.inputLabel}>Inspection Date</Text>
+                <Text style={styles.inputLabel}>Inspection Date (Optional)</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="YYYY-MM-DD"
@@ -296,6 +348,12 @@ export default function ExpensesScreen() {
               <Text style={styles.expenseDate}>
                 {new Date(expense.date).toLocaleDateString()}
               </Text>
+              {expense.hasReceipt && (
+                <View style={styles.receiptIndicator}>
+                  <Receipt size={14} color="#008080" />
+                  <Text style={styles.receiptText}>Receipt attached</Text>
+                </View>
+              )}
             </Animated.View>
           ))
         )}
@@ -381,8 +439,12 @@ export default function ExpensesScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.submitButton}
+                style={[
+                  styles.submitButton,
+                  (!category || !amount) && styles.submitButtonDisabled
+                ]}
                 onPress={handleAddExpense}
+                disabled={!category || !amount}
               >
                 <Text style={styles.submitButtonText}>Add Expense</Text>
               </TouchableOpacity>
@@ -618,6 +680,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666666',
   },
+  receiptIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  receiptText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#008080',
+    marginLeft: 4,
+  },
   addButton: {
     position: 'absolute',
     right: 24,
@@ -743,6 +816,9 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginBottom: 16,
   },
+  submitButtonDisabled: {
+    backgroundColor: '#CCCCCC',
+  },
   submitButtonText: {
     fontFamily: 'Inter-Bold',
     fontSize: 16,
@@ -777,5 +853,20 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 16,
     color: '#333333',
+  },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  warningText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#F57C00',
+    marginLeft: 8,
+    flex: 1,
   },
 });

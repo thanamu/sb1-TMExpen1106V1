@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { Chrome as Home, ChartBar as BarChart, Activity, Calendar, Car } from 'lucide-react-native';
+import { Chrome as Home, ChartBar as BarChart, Activity, Calendar, Car, DollarSign } from 'lucide-react-native';
 import TopBar from '@/components/TopBar';
 import { useAuth } from '@/context/AuthContext';
 
@@ -39,7 +39,7 @@ export default function TabLayout() {
           options={{
             title: 'Expenses',
             tabBarIcon: ({ color, size }) => (
-              <BarChart size={size} color={color} />
+              <DollarSign size={size} color={color} />
             ),
           }}
         />

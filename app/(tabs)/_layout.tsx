@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { Home, BarChart, Activity, Calendar } from 'lucide-react-native';
+import { Home, BarChart, Activity, Calendar, Car } from 'lucide-react-native';
 import TopBar from '@/components/TopBar';
 import { useAuth } from '@/context/AuthContext';
 
@@ -49,6 +49,15 @@ export default function TabLayout() {
             title: 'Activities',
             tabBarIcon: ({ color, size }) => (
               <Activity size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="vehicles"
+          options={{
+            title: 'Vehicles',
+            tabBarIcon: ({ color, size }) => (
+              <Car size={size} color={color} />
             ),
           }}
         />

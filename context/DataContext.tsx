@@ -32,6 +32,57 @@ const storage = {
   }
 };
 
+// Vehicle Types
+export type VehicleType = 'Car' | 'SUV' | 'UTE' | 'Pickup Truck' | 'Caravan' | 'Boat';
+export type FuelType = 'Petrol' | 'Diesel' | 'LPG' | 'EV';
+export type ConsumableType = 'Tyres' | 'Wiper Blades' | 'Engine Oil' | 'Other';
+
+export type Vehicle = {
+  id: string;
+  userId: string;
+  type: VehicleType;
+  make: string;
+  model: string;
+  year: string;
+  registrationNumber: string;
+  registrationDueDate: string;
+  insuranceDueDate: string;
+  serviceDueDate: string;
+  fuelType: FuelType;
+};
+
+export type VehicleExpense = {
+  id: string;
+  userId: string;
+  vehicleId: string;
+  type: 'Insurance' | 'Registration' | 'Service' | 'Inspection' | 'Consumable' | 'Fuel';
+  date: string;
+  amount: number;
+  hasReceipt: boolean;
+  receiptUri?: string;
+  
+  // Insurance specific
+  insuranceType?: string;
+  
+  // Registration specific
+  registrationDate?: string;
+  
+  // Inspection specific
+  inspectionDate?: string;
+  
+  // Service specific
+  serviceType?: string;
+  serviceNotes?: string;
+  
+  // Consumable specific
+  consumableType?: ConsumableType;
+  
+  // Fuel specific
+  fuelType?: FuelType;
+  liters?: number;
+  kilometers?: number;
+};
+
 // Define types
 export type Expense = {
   id: string;
@@ -95,6 +146,8 @@ type ActivitySummary = {
 type DataContextType = {
   expenses: Expense[];
   activities: Activity[];
+  vehicles: Vehicle[];
+  vehicleExpenses: VehicleExpense[];
   expenseSummary: ExpenseSummary;
   activitySummary: ActivitySummary;
   addExpense: (expense: Omit<Expense, 'id' | 'userId'>) => Promise<void>;
@@ -103,6 +156,12 @@ type DataContextType = {
   addActivity: (activity: Omit<Activity, 'id' | 'userId'>) => Promise<void>;
   updateActivity: (id: string, activity: Partial<Activity>) => Promise<void>;
   deleteActivity: (id: string) => Promise<void>;
+  addVehicle: (vehicle: Omit<Vehicle, 'id' | 'userId'>) => Promise<void>;
+  updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
+  deleteVehicle: (id: string) => Promise<void>;
+  addVehicleExpense: (expense: Omit<VehicleExpense, 'id' | 'userId'>) => Promise<void>;
+  updateVehicleExpense: (id: string, expense: Partial<VehicleExpense>) => Promise<void>;
+  deleteVehicleExpense: (id: string) => Promise<void>;
   isLoading: boolean;
 };
 
@@ -145,6 +204,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user } = useAuth();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicleExpenses, setVehicleExpenses] = useState<VehicleExpense[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Initialize summary values
@@ -173,6 +234,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!user) {
         setExpenses([]);
         setActivities([]);
+        setVehicles([]);
+        setVehicleExpenses([]);
         setIsLoading(false);
         return;
       }
@@ -191,6 +254,18 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const activitiesJson = await storage.getItemAsync(activitiesKey);
         const loadedActivities = activitiesJson ? JSON.parse(activitiesJson) : [];
         setActivities(loadedActivities);
+        
+        // Load vehicles
+        const vehiclesKey = `vehicles_${user.id}`;
+        const vehiclesJson = await storage.getItemAsync(vehiclesKey);
+        const loadedVehicles = vehiclesJson ? JSON.parse(vehiclesJson) : [];
+        setVehicles(loadedVehicles);
+        
+        // Load vehicle expenses
+        const vehicleExpensesKey = `vehicle_expenses_${user.id}`;
+        const vehicleExpensesJson = await storage.getItemAsync(vehicleExpensesKey);
+        const loadedVehicleExpenses = vehicleExpensesJson ? JSON.parse(vehicleExpensesJson) : [];
+        setVehicleExpenses(loadedVehicleExpenses);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -370,11 +445,132 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Vehicle CRUD operations
+  const addVehicle = async (vehicle: Omit<Vehicle, 'id' | 'userId'>) => {
+    if (!user) return;
+    
+    try {
+      const newVehicle: Vehicle = {
+        ...vehicle,
+        id: Date.now().toString(),
+        userId: user.id
+      };
+      
+      const updatedVehicles = [...vehicles, newVehicle];
+      setVehicles(updatedVehicles);
+      
+      // Save to storage
+      const vehiclesKey = `vehicles_${user.id}`;
+      await storage.setItemAsync(vehiclesKey, JSON.stringify(updatedVehicles));
+    } catch (error) {
+      console.error('Error adding vehicle:', error);
+    }
+  };
+  
+  const updateVehicle = async (id: string, vehicleUpdate: Partial<Vehicle>) => {
+    if (!user) return;
+    
+    try {
+      const updatedVehicles = vehicles.map(vehicle => 
+        vehicle.id === id ? { ...vehicle, ...vehicleUpdate } : vehicle
+      );
+      
+      setVehicles(updatedVehicles);
+      
+      // Save to storage
+      const vehiclesKey = `vehicles_${user.id}`;
+      await storage.setItemAsync(vehiclesKey, JSON.stringify(updatedVehicles));
+    } catch (error) {
+      console.error('Error updating vehicle:', error);
+    }
+  };
+  
+  const deleteVehicle = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      const updatedVehicles = vehicles.filter(vehicle => vehicle.id !== id);
+      setVehicles(updatedVehicles);
+      
+      // Also delete related vehicle expenses
+      const updatedVehicleExpenses = vehicleExpenses.filter(
+        expense => expense.vehicleId !== id
+      );
+      setVehicleExpenses(updatedVehicleExpenses);
+      
+      // Save to storage
+      const vehiclesKey = `vehicles_${user.id}`;
+      await storage.setItemAsync(vehiclesKey, JSON.stringify(updatedVehicles));
+      
+      const vehicleExpensesKey = `vehicle_expenses_${user.id}`;
+      await storage.setItemAsync(vehicleExpensesKey, JSON.stringify(updatedVehicleExpenses));
+    } catch (error) {
+      console.error('Error deleting vehicle:', error);
+    }
+  };
+  
+  // Vehicle Expense CRUD operations
+  const addVehicleExpense = async (expense: Omit<VehicleExpense, 'id' | 'userId'>) => {
+    if (!user) return;
+    
+    try {
+      const newExpense: VehicleExpense = {
+        ...expense,
+        id: Date.now().toString(),
+        userId: user.id
+      };
+      
+      const updatedExpenses = [...vehicleExpenses, newExpense];
+      setVehicleExpenses(updatedExpenses);
+      
+      // Save to storage
+      const vehicleExpensesKey = `vehicle_expenses_${user.id}`;
+      await storage.setItemAsync(vehicleExpensesKey, JSON.stringify(updatedExpenses));
+    } catch (error) {
+      console.error('Error adding vehicle expense:', error);
+    }
+  };
+  
+  const updateVehicleExpense = async (id: string, expenseUpdate: Partial<VehicleExpense>) => {
+    if (!user) return;
+    
+    try {
+      const updatedExpenses = vehicleExpenses.map(expense => 
+        expense.id === id ? { ...expense, ...expenseUpdate } : expense
+      );
+      
+      setVehicleExpenses(updatedExpenses);
+      
+      // Save to storage
+      const vehicleExpensesKey = `vehicle_expenses_${user.id}`;
+      await storage.setItemAsync(vehicleExpensesKey, JSON.stringify(updatedExpenses));
+    } catch (error) {
+      console.error('Error updating vehicle expense:', error);
+    }
+  };
+  
+  const deleteVehicleExpense = async (id: string) => {
+    if (!user) return;
+    
+    try {
+      const updatedExpenses = vehicleExpenses.filter(expense => expense.id !== id);
+      setVehicleExpenses(updatedExpenses);
+      
+      // Save to storage
+      const vehicleExpensesKey = `vehicle_expenses_${user.id}`;
+      await storage.setItemAsync(vehicleExpensesKey, JSON.stringify(updatedExpenses));
+    } catch (error) {
+      console.error('Error deleting vehicle expense:', error);
+    }
+  };
+
   return (
     <DataContext.Provider
       value={{
         expenses,
         activities,
+        vehicles,
+        vehicleExpenses,
         expenseSummary,
         activitySummary,
         addExpense,
@@ -383,6 +579,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addActivity,
         updateActivity,
         deleteActivity,
+        addVehicle,
+        updateVehicle,
+        deleteVehicle,
+        addVehicleExpense,
+        updateVehicleExpense,
+        deleteVehicleExpense,
         isLoading
       }}
     >

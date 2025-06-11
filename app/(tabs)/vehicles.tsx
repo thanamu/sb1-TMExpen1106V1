@@ -19,7 +19,8 @@ import {
   Calendar as CalendarIcon,
   Receipt,
   Camera,
-  DollarSign
+  DollarSign,
+  ChevronRight
 } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
@@ -28,7 +29,7 @@ const FUEL_TYPES: FuelType[] = ['Petrol', 'Diesel', 'LPG', 'EV'];
 const CONSUMABLE_TYPES: ConsumableType[] = ['Tyres', 'Wiper Blades', 'Engine Oil', 'Other'];
 
 const VehiclesScreen = () => {
-  const { vehicles, addVehicle, deleteVehicle, addVehicleExpense } = useData();
+  const { vehicles, addVehicle, deleteVehicle, addVehicleExpense, getVehicleExpenses } = useData();
   
   // Vehicle form state
   const [isAddingVehicle, setIsAddingVehicle] = useState(false);
@@ -57,6 +58,9 @@ const VehiclesScreen = () => {
   const [consumableType, setConsumableType] = useState<ConsumableType>('Tyres');
   const [fuelLiters, setFuelLiters] = useState('');
   const [fuelKilometers, setFuelKilometers] = useState('');
+  
+  // Vehicle details view
+  const [viewingVehicle, setViewingVehicle] = useState<Vehicle | null>(null);
   
   // Modal states
   const [showTypeModal, setShowTypeModal] = useState(false);
@@ -142,18 +146,19 @@ const VehiclesScreen = () => {
       newExpense.consumableType = consumableType;
     } else if (expenseType === 'Fuel') {
       newExpense.fuelType = selectedVehicle.fuelType;
-      newExpense.liters = parseFloat(fuelLiters);
-      newExpense.kilometers = parseFloat(fuelKilometers);
+      if (fuelLiters) newExpense.liters = parseFloat(fuelLiters);
+      if (fuelKilometers) newExpense.kilometers = parseFloat(fuelKilometers);
     }
     
     addVehicleExpense(newExpense);
     setIsAddingExpense(false);
+    setSelectedVehicle(null);
     resetExpenseForm();
   };
   
   const handleScanReceipt = () => {
     setHasReceipt(!hasReceipt);
-    Alert.alert('Success', 'Receipt scanned successfully');
+    Alert.alert('Success', hasReceipt ? 'Receipt removed' : 'Receipt scanned successfully');
   };
   
   const formatDate = (dateString: string) => {
@@ -165,62 +170,135 @@ const VehiclesScreen = () => {
     });
   };
   
-  const renderVehicleItem = ({ item }: { item: Vehicle }) => (
-    <Animated.View
-      entering={FadeInUp.delay(100).duration(400)}
-      style={styles.vehicleCard}
-    >
-      <View style={styles.vehicleHeader}>
-        <View style={styles.vehicleInfo}>
-          <Text style={styles.vehicleTitle}>
-            {item.year} {item.make} {item.model}
-          </Text>
-          <Text style={styles.vehicleSubtitle}>
-            {item.type} • {item.registrationNumber}
-          </Text>
-        </View>
+  const formatCurrency = (amount: number) => {
+    return amount.toLocaleString('en-AU', {
+      style: 'currency',
+      currency: 'AUD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  };
+  
+  const renderVehicleItem = ({ item }: { item: Vehicle }) => {
+    const vehicleExpenses = getVehicleExpenses(item.id);
+    const totalExpenses = vehicleExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+    
+    return (
+      <Animated.View
+        entering={FadeInUp.delay(100).duration(400)}
+        style={styles.vehicleCard}
+      >
+        <TouchableOpacity
+          style={styles.vehicleContent}
+          onPress={() => setViewingVehicle(item)}
+        >
+          <View style={styles.vehicleHeader}>
+            <View style={styles.vehicleInfo}>
+              <Text style={styles.vehicleTitle}>
+                {item.year} {item.make} {item.model}
+              </Text>
+              <Text style={styles.vehicleSubtitle}>
+                {item.type} • {item.registrationNumber}
+              </Text>
+              <Text style={styles.vehicleExpenseTotal}>
+                Total Expenses: {formatCurrency(totalExpenses)}
+              </Text>
+              <Text style={styles.vehicleExpenseCount}>
+                {vehicleExpenses.length} expense{vehicleExpenses.length !== 1 ? 's' : ''} recorded
+              </Text>
+            </View>
+            
+            <View style={styles.vehicleActions}>
+              <TouchableOpacity
+                style={styles.addExpenseButton}
+                onPress={() => {
+                  setSelectedVehicle(item);
+                  setIsAddingExpense(true);
+                }}
+              >
+                <Plus size={20} color="#008080" />
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.viewButton}>
+                <ChevronRight size={20} color="#666666" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          <View style={styles.vehicleDates}>
+            <View style={styles.dateItem}>
+              <Text style={styles.dateLabel}>Registration Due:</Text>
+              <Text style={styles.dateValue}>
+                {formatDate(item.registrationDueDate)}
+              </Text>
+            </View>
+            
+            <View style={styles.dateItem}>
+              <Text style={styles.dateLabel}>Insurance Due:</Text>
+              <Text style={styles.dateValue}>
+                {formatDate(item.insuranceDueDate)}
+              </Text>
+            </View>
+            
+            <View style={styles.dateItem}>
+              <Text style={styles.dateLabel}>Service Due:</Text>
+              <Text style={styles.dateValue}>
+                {formatDate(item.serviceDueDate)}
+              </Text>
+            </View>
+          </View>
+        </TouchableOpacity>
         
         <TouchableOpacity
-          style={styles.addExpenseButton}
-          onPress={() => {
-            setSelectedVehicle(item);
-            setIsAddingExpense(true);
-          }}
+          style={styles.deleteButton}
+          onPress={() => deleteVehicle(item.id)}
         >
-          <Plus size={20} color="#008080" />
+          <Text style={styles.deleteButtonText}>Delete Vehicle</Text>
         </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+  
+  const renderExpenseItem = ({ item }: { item: VehicleExpense }) => (
+    <View style={styles.expenseItem}>
+      <View style={styles.expenseHeader}>
+        <Text style={styles.expenseType}>{item.type}</Text>
+        <Text style={styles.expenseAmount}>{formatCurrency(item.amount)}</Text>
       </View>
+      <Text style={styles.expenseDate}>{formatDate(item.date)}</Text>
+      {item.hasReceipt && (
+        <View style={styles.receiptIndicator}>
+          <Receipt size={12} color="#4CAF50" />
+          <Text style={styles.receiptText}>Receipt attached</Text>
+        </View>
+      )}
       
-      <View style={styles.vehicleDates}>
-        <View style={styles.dateItem}>
-          <Text style={styles.dateLabel}>Registration Due:</Text>
-          <Text style={styles.dateValue}>
-            {formatDate(item.registrationDueDate)}
-          </Text>
+      {/* Type-specific details */}
+      {item.type === 'Fuel' && (item.liters || item.kilometers) && (
+        <View style={styles.expenseDetails}>
+          {item.liters && <Text style={styles.detailText}>Liters: {item.liters}</Text>}
+          {item.kilometers && <Text style={styles.detailText}>Odometer: {item.kilometers} km</Text>}
         </View>
-        
-        <View style={styles.dateItem}>
-          <Text style={styles.dateLabel}>Insurance Due:</Text>
-          <Text style={styles.dateValue}>
-            {formatDate(item.insuranceDueDate)}
-          </Text>
-        </View>
-        
-        <View style={styles.dateItem}>
-          <Text style={styles.dateLabel}>Service Due:</Text>
-          <Text style={styles.dateValue}>
-            {formatDate(item.serviceDueDate)}
-          </Text>
-        </View>
-      </View>
+      )}
       
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => deleteVehicle(item.id)}
-      >
-        <Text style={styles.deleteButtonText}>Delete Vehicle</Text>
-      </TouchableOpacity>
-    </Animated.View>
+      {item.type === 'Insurance' && item.insuranceType && (
+        <View style={styles.expenseDetails}>
+          <Text style={styles.detailText}>Type: {item.insuranceType}</Text>
+        </View>
+      )}
+      
+      {item.type === 'Service' && item.serviceNotes && (
+        <View style={styles.expenseDetails}>
+          <Text style={styles.detailText}>Notes: {item.serviceNotes}</Text>
+        </View>
+      )}
+      
+      {item.type === 'Consumable' && item.consumableType && (
+        <View style={styles.expenseDetails}>
+          <Text style={styles.detailText}>Type: {item.consumableType}</Text>
+        </View>
+      )}
+    </View>
   );
   
   return (
@@ -252,6 +330,61 @@ const VehiclesScreen = () => {
           </Text>
         </View>
       )}
+      
+      {/* Vehicle Details Modal */}
+      <Modal
+        visible={viewingVehicle !== null}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setViewingVehicle(null)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {viewingVehicle ? `${viewingVehicle.year} ${viewingVehicle.make} ${viewingVehicle.model}` : ''}
+              </Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setViewingVehicle(null)}
+              >
+                <X size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            
+            {viewingVehicle && (
+              <ScrollView style={styles.vehicleDetailsContainer}>
+                <Text style={styles.sectionTitle}>Expense History</Text>
+                
+                {getVehicleExpenses(viewingVehicle.id).length > 0 ? (
+                  <FlatList
+                    data={getVehicleExpenses(viewingVehicle.id).sort((a, b) => 
+                      new Date(b.date).getTime() - new Date(a.date).getTime()
+                    )}
+                    renderItem={renderExpenseItem}
+                    keyExtractor={(item) => item.id}
+                    scrollEnabled={false}
+                  />
+                ) : (
+                  <Text style={styles.noExpensesText}>No expenses recorded yet</Text>
+                )}
+                
+                <TouchableOpacity
+                  style={styles.addExpenseFromDetailsButton}
+                  onPress={() => {
+                    setSelectedVehicle(viewingVehicle);
+                    setViewingVehicle(null);
+                    setIsAddingExpense(true);
+                  }}
+                >
+                  <Plus size={20} color="#FFFFFF" />
+                  <Text style={styles.addExpenseFromDetailsText}>Add Expense</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </Modal>
       
       {/* Add Vehicle Modal */}
       <Modal
@@ -374,6 +507,7 @@ const VehiclesScreen = () => {
         transparent={true}
         onRequestClose={() => {
           setIsAddingExpense(false);
+          setSelectedVehicle(null);
           resetExpenseForm();
         }}
       >
@@ -385,6 +519,7 @@ const VehiclesScreen = () => {
                 style={styles.closeButton}
                 onPress={() => {
                   setIsAddingExpense(false);
+                  setSelectedVehicle(null);
                   resetExpenseForm();
                 }}
               >
@@ -393,6 +528,14 @@ const VehiclesScreen = () => {
             </View>
             
             <ScrollView style={styles.formContainer}>
+              {selectedVehicle && (
+                <View style={styles.selectedVehicleInfo}>
+                  <Text style={styles.selectedVehicleText}>
+                    {selectedVehicle.year} {selectedVehicle.make} {selectedVehicle.model}
+                  </Text>
+                </View>
+              )}
+              
               <Text style={styles.inputLabel}>Expense Type</Text>
               <View style={styles.expenseTypeContainer}>
                 {['Fuel', 'Insurance', 'Registration', 'Service', 'Inspection', 'Consumable'].map((type) => (
@@ -667,10 +810,13 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
+  vehicleContent: {
+    marginBottom: 12,
+  },
   vehicleHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 16,
   },
   vehicleInfo: {
@@ -686,12 +832,37 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 14,
     color: '#666666',
+    marginBottom: 8,
+  },
+  vehicleExpenseTotal: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    color: '#008080',
+    marginBottom: 2,
+  },
+  vehicleExpenseCount: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#888888',
+  },
+  vehicleActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   addExpenseButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
     backgroundColor: '#E6F4F4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  viewButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F5F5F5',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -721,7 +892,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: '#FFEBEE',
     borderRadius: 4,
-    marginTop: 8,
   },
   deleteButtonText: {
     fontFamily: 'Inter-Medium',
@@ -770,6 +940,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     fontSize: 18,
     color: '#333333',
+    flex: 1,
   },
   closeButton: {
     width: 40,
@@ -779,6 +950,26 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     padding: 16,
+  },
+  vehicleDetailsContainer: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    color: '#333333',
+    marginBottom: 16,
+  },
+  selectedVehicleInfo: {
+    backgroundColor: '#E6F4F4',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  selectedVehicleText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    color: '#008080',
   },
   inputLabel: {
     fontFamily: 'Inter-Medium',
@@ -913,6 +1104,78 @@ const styles = StyleSheet.create({
   },
   scannedButtonText: {
     color: '#FFFFFF',
+  },
+  expenseItem: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#008080',
+  },
+  expenseHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  expenseType: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    color: '#333333',
+  },
+  expenseAmount: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    color: '#008080',
+  },
+  expenseDate: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#666666',
+    marginBottom: 4,
+  },
+  receiptIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  receiptText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#4CAF50',
+    marginLeft: 4,
+  },
+  expenseDetails: {
+    marginTop: 4,
+  },
+  detailText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#666666',
+    marginBottom: 2,
+  },
+  noExpensesText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#666666',
+    textAlign: 'center',
+    padding: 24,
+  },
+  addExpenseFromDetailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#008080',
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 16,
+  },
+  addExpenseFromDetailsText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    color: '#FFFFFF',
+    marginLeft: 8,
   },
 });
 

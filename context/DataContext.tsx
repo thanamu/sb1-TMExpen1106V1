@@ -122,6 +122,7 @@ export type Activity = {
   kilojoules: number;
   steps: number;
   date: string;
+  notes?: string;
 };
 
 type ExpenseSummary = {
@@ -162,7 +163,16 @@ type DataContextType = {
   addVehicleExpense: (expense: Omit<VehicleExpense, 'id' | 'userId'>) => Promise<void>;
   updateVehicleExpense: (id: string, expense: Partial<VehicleExpense>) => Promise<void>;
   deleteVehicleExpense: (id: string) => Promise<void>;
+  getVehicleExpenses: (vehicleId: string) => VehicleExpense[];
   isLoading: boolean;
+};
+
+// Helper function to generate unique IDs
+let idCounter = 0;
+const generateUniqueId = () => {
+  const timestamp = Date.now();
+  const counter = ++idCounter;
+  return `${timestamp}-${counter}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
 // Helper functions for date calculations
@@ -342,7 +352,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const newExpense: Expense = {
         ...expense,
-        id: Date.now().toString(),
+        id: generateUniqueId(),
         userId: user.id
       };
       
@@ -397,7 +407,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const newActivity: Activity = {
         ...activity,
-        id: Date.now().toString(),
+        id: generateUniqueId(),
         userId: user.id
       };
       
@@ -452,7 +462,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const newVehicle: Vehicle = {
         ...vehicle,
-        id: Date.now().toString(),
+        id: generateUniqueId(),
         userId: user.id
       };
       
@@ -516,7 +526,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const newExpense: VehicleExpense = {
         ...expense,
-        id: Date.now().toString(),
+        id: generateUniqueId(),
         userId: user.id
       };
       
@@ -564,6 +574,11 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Helper function to get expenses for a specific vehicle
+  const getVehicleExpenses = (vehicleId: string): VehicleExpense[] => {
+    return vehicleExpenses.filter(expense => expense.vehicleId === vehicleId);
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -585,6 +600,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addVehicleExpense,
         updateVehicleExpense,
         deleteVehicleExpense,
+        getVehicleExpenses,
         isLoading
       }}
     >

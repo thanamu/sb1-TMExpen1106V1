@@ -12,20 +12,7 @@ import {
   Image
 } from 'react-native';
 import { useData, Expense } from '@/context/DataContext';
-import { 
-  DollarSign, 
-  Plus, 
-  ChevronDown, 
-  X, 
-  Calendar, 
-  Camera,
-  ShoppingCart,
-  Coffee,
-  ShoppingBag,
-  Film,
-  Car,
-  MoreHorizontal
-} from 'lucide-react-native';
+import { DollarSign, Plus, ChevronDown, X, Calendar, Camera, ShoppingCart, Coffee, ShoppingBag, Film, Car, MoveHorizontal as MoreHorizontal } from 'lucide-react-native';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 
 // Expense categories with their associated colors and icons

@@ -162,12 +162,25 @@ const VehiclesScreen = () => {
   };
   
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'Not set';
-    return new Date(dateString).toLocaleDateString('en-AU', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    if (!dateString || dateString.trim() === '') {
+      return 'Not set';
+    }
+    
+    try {
+      const date = new Date(dateString);
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        return 'Not set';
+      }
+      
+      return date.toLocaleDateString('en-AU', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Not set';
+    }
   };
   
   const formatCurrency = (amount: number) => {
@@ -456,7 +469,7 @@ const VehiclesScreen = () => {
                 autoCapitalize="characters"
               />
               
-              <Text style={styles.inputLabel}>Registration Due Date</Text>
+              <Text style={styles.inputLabel}>Registration Due Date (Optional)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="YYYY-MM-DD"
@@ -464,7 +477,7 @@ const VehiclesScreen = () => {
                 onChangeText={setRegistrationDueDate}
               />
               
-              <Text style={styles.inputLabel}>Insurance Due Date</Text>
+              <Text style={styles.inputLabel}>Insurance Due Date (Optional)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="YYYY-MM-DD"
@@ -472,7 +485,7 @@ const VehiclesScreen = () => {
                 onChangeText={setInsuranceDueDate}
               />
               
-              <Text style={styles.inputLabel}>Service Due Date</Text>
+              <Text style={styles.inputLabel}>Service Due Date (Optional)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="YYYY-MM-DD"

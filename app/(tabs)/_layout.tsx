@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { Chrome as Home, DollarSign, Activity, Calendar, Car, Chrome as HomeIcon } from 'lucide-react-native';
+import { Chrome as Home, DollarSign, Activity, Calendar, Car, Chrome as HomeIcon, Plane } from 'lucide-react-native';
 import TopBar from '@/components/TopBar';
 import { useAuth } from '@/context/AuthContext';
 
@@ -67,6 +67,15 @@ export default function TabLayout() {
             title: 'Homes',
             tabBarIcon: ({ color, size }) => (
               <HomeIcon size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="holidays"
+          options={{
+            title: 'Holidays',
+            tabBarIcon: ({ color, size }) => (
+              <Plane size={size} color={color} />
             ),
           }}
         />

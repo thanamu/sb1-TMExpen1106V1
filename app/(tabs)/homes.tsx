@@ -11,21 +11,7 @@ import {
   Alert
 } from 'react-native';
 import { useHome, Home, HomeType, OwnershipType, InsuranceType } from '@/context/HomeContext';
-import {
-  Home as HomeIcon,
-  Plus,
-  ChevronDown,
-  X,
-  Calendar as CalendarIcon,
-  DollarSign,
-  ChevronRight,
-  Shield,
-  Zap,
-  Droplets,
-  Wifi,
-  Wrench,
-  AlertTriangle
-} from 'lucide-react-native';
+import { Chrome as HomeIcon, Plus, ChevronDown, X, Calendar as CalendarIcon, DollarSign, ChevronRight, Shield, Zap, Droplets, Wifi, Wrench, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 const HOME_TYPES: HomeType[] = ['House', 'Town house', 'Unit / Apartment'];

@@ -12,6 +12,7 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider } from '@/context/AuthContext';
 import { DataProvider } from '@/context/DataContext';
 import { WeatherProvider } from '@/context/WeatherContext';
+import { HomeProvider } from '@/context/HomeContext';
 
 // Prevent the splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -40,15 +41,17 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <DataProvider>
-        <WeatherProvider>
-          <StatusBar style="auto" />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </Stack>
-        </WeatherProvider>
+        <HomeProvider>
+          <WeatherProvider>
+            <StatusBar style="auto" />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="login" />
+              <Stack.Screen name="onboarding" />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack>
+          </WeatherProvider>
+        </HomeProvider>
       </DataProvider>
     </AuthProvider>
   );

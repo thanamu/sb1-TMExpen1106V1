@@ -269,22 +269,50 @@ const HomesScreen = () => {
                 </View>
                 
                 <View style={styles.actionButtons}>
-                  <TouchableOpacity style={styles.actionButton}>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => {
+                      setViewingHome(null);
+                      // TODO: Navigate to insurance management
+                      Alert.alert('Insurance Management', 'Insurance management feature coming soon!');
+                    }}
+                  >
                     <Shield size={20} color="#FFFFFF" />
                     <Text style={styles.actionButtonText}>Manage Insurance</Text>
                   </TouchableOpacity>
                   
-                  <TouchableOpacity style={styles.actionButton}>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => {
+                      setViewingHome(null);
+                      // TODO: Navigate to smoke alarms management
+                      Alert.alert('Smoke Alarms', 'Smoke alarm management feature coming soon!');
+                    }}
+                  >
                     <AlertTriangle size={20} color="#FFFFFF" />
                     <Text style={styles.actionButtonText}>Smoke Alarms</Text>
                   </TouchableOpacity>
                   
-                  <TouchableOpacity style={styles.actionButton}>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => {
+                      setViewingHome(null);
+                      // TODO: Navigate to repairs & maintenance
+                      Alert.alert('Repairs & Maintenance', 'Repairs & maintenance management feature coming soon!');
+                    }}
+                  >
                     <Wrench size={20} color="#FFFFFF" />
                     <Text style={styles.actionButtonText}>Repairs & Maintenance</Text>
                   </TouchableOpacity>
                   
-                  <TouchableOpacity style={styles.actionButton}>
+                  <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={() => {
+                      setViewingHome(null);
+                      // TODO: Navigate to utility bills management
+                      Alert.alert('Utility Bills', 'Utility bills management feature coming soon!');
+                    }}
+                  >
                     <Zap size={20} color="#FFFFFF" />
                     <Text style={styles.actionButtonText}>Utility Bills</Text>
                   </TouchableOpacity>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useData } from '@/context/DataContext';
 import { useWeather } from '@/context/WeatherContext';
@@ -58,6 +58,10 @@ const TopBar: React.FC = () => {
   return (
     <>
       <View style={styles.container}>
+        <Image 
+          source={require('../assets/images/Logo.png')} 
+          style={styles.logo}
+        />
         <View style={styles.leftSection}>
           <Text style={styles.greeting}>
             Hello, <Text style={styles.username}>{user?.firstName || 'User'}</Text>
@@ -259,6 +263,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    resizeMode: 'contain',
+    marginRight: 12,
   },
   leftSection: {
     flex: 1,

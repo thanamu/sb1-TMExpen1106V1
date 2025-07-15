@@ -67,7 +67,7 @@ export default function TabLayout() {
             title: 'Homes',
             tabBarIcon: ({ color, size }) => (
               <Image 
-                source={require('../../assets/images/house.png')} 
+                source={require('../../assets/images/House.png')} 
                 style={{ width: size, height: size, tintColor: color }}
                 resizeMode="contain"
               />

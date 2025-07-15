@@ -13,6 +13,10 @@ import {
 import { useHome, Home, HomeType, OwnershipType, InsuranceType } from '@/context/HomeContext';
 import { Chrome as HomeIcon, Plus, ChevronDown, X, Calendar as CalendarIcon, DollarSign, ChevronRight, Shield, Zap, Droplets, Wifi, Wrench, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { InsuranceModal } from '@/components/InsuranceModal';
+import { SmokeAlarmsModal } from '@/components/SmokeAlarmsModal';
+import { RepairsModal } from '@/components/RepairsModal';
+import { UtilityBillsModal } from '@/components/UtilityBillsModal';
 
 const HOME_TYPES: HomeType[] = ['House', 'Town house', 'Unit / Apartment'];
 const OWNERSHIP_TYPES: OwnershipType[] = ['Owner/Occupier', 'Paying off home loan', 'Renter', 'Investor'];
@@ -42,6 +46,13 @@ const HomesScreen = () => {
   
   // Home details view
   const [viewingHome, setViewingHome] = useState<Home | null>(null);
+  
+  // Feature modals
+  const [showInsuranceModal, setShowInsuranceModal] = useState(false);
+  const [showSmokeAlarmsModal, setShowSmokeAlarmsModal] = useState(false);
+  const [showRepairsModal, setShowRepairsModal] = useState(false);
+  const [showUtilityBillsModal, setShowUtilityBillsModal] = useState(false);
+  const [selectedHomeForModal, setSelectedHomeForModal] = useState<Home | null>(null);
   
   // Modal states
   const [showHomeTypeModal, setShowHomeTypeModal] = useState(false);
@@ -272,9 +283,9 @@ const HomesScreen = () => {
                   <TouchableOpacity 
                     style={styles.actionButton}
                     onPress={() => {
+                      setSelectedHomeForModal(viewingHome);
                       setViewingHome(null);
-                      // TODO: Navigate to insurance management
-                      Alert.alert('Insurance Management', 'Insurance management feature coming soon!');
+                      setShowInsuranceModal(true);
                     }}
                   >
                     <Shield size={20} color="#FFFFFF" />
@@ -284,9 +295,9 @@ const HomesScreen = () => {
                   <TouchableOpacity 
                     style={styles.actionButton}
                     onPress={() => {
+                      setSelectedHomeForModal(viewingHome);
                       setViewingHome(null);
-                      // TODO: Navigate to smoke alarms management
-                      Alert.alert('Smoke Alarms', 'Smoke alarm management feature coming soon!');
+                      setShowSmokeAlarmsModal(true);
                     }}
                   >
                     <AlertTriangle size={20} color="#FFFFFF" />
@@ -296,9 +307,9 @@ const HomesScreen = () => {
                   <TouchableOpacity 
                     style={styles.actionButton}
                     onPress={() => {
+                      setSelectedHomeForModal(viewingHome);
                       setViewingHome(null);
-                      // TODO: Navigate to repairs & maintenance
-                      Alert.alert('Repairs & Maintenance', 'Repairs & maintenance management feature coming soon!');
+                      setShowRepairsModal(true);
                     }}
                   >
                     <Wrench size={20} color="#FFFFFF" />
@@ -308,9 +319,9 @@ const HomesScreen = () => {
                   <TouchableOpacity 
                     style={styles.actionButton}
                     onPress={() => {
+                      setSelectedHomeForModal(viewingHome);
                       setViewingHome(null);
-                      // TODO: Navigate to utility bills management
-                      Alert.alert('Utility Bills', 'Utility bills management feature coming soon!');
+                      setShowUtilityBillsModal(true);
                     }}
                   >
                     <Zap size={20} color="#FFFFFF" />
@@ -520,6 +531,43 @@ const HomesScreen = () => {
           </View>
         </TouchableOpacity>
       </Modal>
+      
+      {/* Feature Modals */}
+      <InsuranceModal
+        visible={showInsuranceModal}
+        home={selectedHomeForModal}
+        onClose={() => {
+          setShowInsuranceModal(false);
+          setSelectedHomeForModal(null);
+        }}
+      />
+      
+      <SmokeAlarmsModal
+        visible={showSmokeAlarmsModal}
+        home={selectedHomeForModal}
+        onClose={() => {
+          setShowSmokeAlarmsModal(false);
+          setSelectedHomeForModal(null);
+        }}
+      />
+      
+      <RepairsModal
+        visible={showRepairsModal}
+        home={selectedHomeForModal}
+        onClose={() => {
+          setShowRepairsModal(false);
+          setSelectedHomeForModal(null);
+        }}
+      />
+      
+      <UtilityBillsModal
+        visible={showUtilityBillsModal}
+        home={selectedHomeForModal}
+        onClose={() => {
+          setShowUtilityBillsModal(false);
+          setSelectedHomeForModal(null);
+        }}
+      />
     </View>
   );
 };

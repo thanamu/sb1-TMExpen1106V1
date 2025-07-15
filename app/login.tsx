@@ -99,15 +99,6 @@ export default function Login() {
             New user? Create an account
           </Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.registerLink} 
-          onPress={() => router.push('/onboarding')}
-        >
-          <Text style={styles.registerLinkText}>
-            New user? Create an account
-          </Text>
-        </TouchableOpacity>
       </View>
     </Animated.View>
   );

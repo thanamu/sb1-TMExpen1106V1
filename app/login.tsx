@@ -7,11 +7,20 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 export default function Login() {
   const router = useRouter();
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, rememberedEmail, setRememberCredentials } = useAuth();
   
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(rememberedEmail || '');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
+  
+  // Update email when rememberedEmail changes
+  useEffect(() => {
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, [rememberedEmail]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -21,6 +30,7 @@ export default function Login() {
     
     try {
       setError('');
+      setRememberCredentials(rememberMe);
       const success = await login(email, password);
       
       if (success) {
@@ -76,6 +86,16 @@ export default function Login() {
             secureTextEntry
           />
         </View>
+        
+        <TouchableOpacity 
+          style={styles.rememberMeContainer}
+          onPress={() => setRememberMe(!rememberMe)}
+        >
+          <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
+            {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+          <Text style={styles.rememberMeText}>Remember me</Text>
+        </TouchableOpacity>
         
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         
@@ -153,6 +173,35 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 16,
     color: '#333333',
+  },
+  rememberMeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderWidth: 2,
+    borderColor: '#DDDDDD',
+    borderRadius: 4,
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#008080',
+    borderColor: '#008080',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+  },
+  rememberMeText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#666666',
   },
   errorText: {
     fontFamily: 'Inter-Regular',

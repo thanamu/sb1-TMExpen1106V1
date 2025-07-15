@@ -7,7 +7,18 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, autoLogin } = useAuth();
+  
+  useEffect(() => {
+    // Attempt auto-login when the app starts
+    const attemptAutoLogin = async () => {
+      if (!isAuthenticated && !isLoading) {
+        await autoLogin();
+      }
+    };
+    
+    attemptAutoLogin();
+  }, [isLoading]);
 
   useEffect(() => {
     // If already authenticated, redirect to main app

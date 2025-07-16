@@ -8,7 +8,7 @@ import { Menu, X, RefreshCw, LogOut, ChartPie as PieChart, ChartBar as BarChart 
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 const TopBar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
   const { expenseSummary, activitySummary } = useData();
   const { weather, refreshWeather, isLoading } = useWeather();
   const router = useRouter();
@@ -26,7 +26,7 @@ const TopBar: React.FC = () => {
   };
   
   const handleLogout = async () => {
-    await logout();
+    await signOut();
     setMenuVisible(false);
     router.replace('/');
   };
@@ -64,7 +64,7 @@ const TopBar: React.FC = () => {
         />
         <View style={styles.leftSection}>
           <Text style={styles.greeting}>
-            Hello, <Text style={styles.username}>{user?.firstName || 'User'}</Text>
+            Hello, <Text style={styles.username}>{user?.user_metadata?.first_name || 'User'}</Text>
           </Text>
           <Text style={styles.date}>{getCurrentDate()}</Text>
         </View>
@@ -79,7 +79,7 @@ const TopBar: React.FC = () => {
               <Text style={styles.weatherIcon}>{weather.icon}</Text>
               <View>
                 <Text style={styles.temperature}>{weather.temperature}°C</Text>
-                <Text style={styles.location}>{user?.suburb || 'Location'}</Text>
+                <Text style={styles.location}>{user?.user_metadata?.suburb || 'Location'}</Text>
               </View>
             </>
           ) : (

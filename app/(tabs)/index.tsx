@@ -137,7 +137,7 @@ const HomeScreen = () => {
         <View style={styles.bannerOverlay} />
         <View style={styles.bannerContent}>
           <Text style={styles.welcomeText}>
-            Welcome back, {user?.firstName}
+            Welcome back, {user?.user_metadata?.first_name || 'User'}
           </Text>
           <Text style={styles.welcomeSubtext}>
             Keep track of your expenses and stay active

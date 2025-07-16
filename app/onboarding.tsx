@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { ArrowLeft } from 'lucide-react-native';
@@ -7,7 +7,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 export default function Onboarding() {
   const router = useRouter();
-  const { register, isLoading } = useAuth();
+  const { signUp, isLoading } = useAuth();
   
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -44,8 +44,8 @@ export default function Onboarding() {
         setError('Passwords do not match');
         return;
       }
-      if (password.length < 8) {
-        setError('Password must be at least 8 characters');
+      if (password.length < 6) {
+        setError('Password must be at least 6 characters');
         return;
       }
       setError('');
@@ -59,25 +59,24 @@ export default function Onboarding() {
       return;
     }
     
-    try {
-      setError('');
-      const userData = {
-        firstName,
-        lastName,
-        email,
-        suburb,
-        postcode
-      };
-      
-      const success = await register(email, password, userData);
-      
-      if (success) {
-        router.replace('/(tabs)');
-      } else {
-        setError('Registration failed. Please try again.');
-      }
-    } catch (err) {
-      setError('Registration failed. Please try again.');
+    setError('');
+    const userData = {
+      firstName,
+      lastName,
+      suburb,
+      postcode
+    };
+    
+    const result = await signUp(email, password, userData);
+    
+    if (!result.success) {
+      setError(result.error || 'Registration failed');
+    } else {
+      Alert.alert(
+        'Success!', 
+        'Account created successfully. Please check your email to verify your account.',
+        [{ text: 'OK', onPress: () => router.replace('/login') }]
+      );
     }
   };
   
@@ -114,6 +113,7 @@ export default function Onboarding() {
               placeholderTextColor="#999999"
               value={firstName}
               onChangeText={setFirstName}
+              autoComplete="given-name"
             />
             
             <TextInput 
@@ -122,6 +122,7 @@ export default function Onboarding() {
               placeholderTextColor="#999999"
               value={lastName}
               onChangeText={setLastName}
+              autoComplete="family-name"
             />
             
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -147,6 +148,7 @@ export default function Onboarding() {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoComplete="email"
             />
             
             <TextInput 
@@ -156,6 +158,7 @@ export default function Onboarding() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              autoComplete="new-password"
             />
             
             <TextInput 
@@ -165,6 +168,7 @@ export default function Onboarding() {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
+              autoComplete="new-password"
             />
             
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -188,6 +192,7 @@ export default function Onboarding() {
               placeholderTextColor="#999999"
               value={suburb}
               onChangeText={setSuburb}
+              autoComplete="address-level2"
             />
             
             <TextInput 
@@ -197,6 +202,7 @@ export default function Onboarding() {
               value={postcode}
               onChangeText={setPostcode}
               keyboardType="numeric"
+              autoComplete="postal-code"
             />
             
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -215,8 +221,7 @@ export default function Onboarding() {
             
             <Text style={styles.privacyText}>
               By signing up, you agree to our Terms of Service and Privacy Policy.
-              Your data is securely stored on your device in accordance with GDPR 
-              and local privacy laws.
+              Your data is securely stored and protected.
             </Text>
           </View>
         )}

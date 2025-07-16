@@ -68,7 +68,7 @@ export const WeatherProvider: React.FC<{ children: React.ReactNode }> = ({ child
   
   // Fetch weather when user changes or manually refreshed
   const refreshWeather = async () => {
-    if (!user) {
+    if (!user?.user_metadata?.suburb || !user?.user_metadata?.postcode) {
       setWeather(null);
       return;
     }
@@ -77,7 +77,10 @@ export const WeatherProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setIsLoading(true);
       setError(null);
       
-      const weatherData = await fetchWeather(user.suburb, user.postcode);
+      const weatherData = await fetchWeather(
+        user.user_metadata.suburb, 
+        user.user_metadata.postcode
+      );
       setWeather(weatherData);
     } catch (err) {
       console.error('Error fetching weather:', err);

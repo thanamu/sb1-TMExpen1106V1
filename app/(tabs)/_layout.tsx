@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
-import { StyleSheet, Image } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { Chrome as Home, DollarSign, Activity, Calendar, Car, Plane } from 'lucide-react-native';
 import TopBar from '@/components/TopBar';
 import { useAuth } from '@/context/AuthContext';

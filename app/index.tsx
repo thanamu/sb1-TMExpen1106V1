@@ -7,18 +7,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated, isLoading, autoLogin } = useAuth();
-  
-  useEffect(() => {
-    // Attempt auto-login when the app starts
-    const attemptAutoLogin = async () => {
-      if (!isAuthenticated && !isLoading) {
-        await autoLogin();
-      }
-    };
-    
-    attemptAutoLogin();
-  }, [isLoading]);
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     // If already authenticated, redirect to main app
@@ -26,6 +15,20 @@ export default function Home() {
       router.replace('/(tabs)');
     }
   }, [isAuthenticated, isLoading, router]);
+
+  // Show loading while checking auth status
+  if (isLoading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
+  // Don't show anything if user is authenticated (will redirect)
+  if (isAuthenticated) {
+    return null;
+  }
 
   const handleLoginPress = () => {
     router.push('/login');
@@ -52,7 +55,7 @@ export default function Home() {
         </TouchableOpacity>
         
         <Text style={styles.privacyText}>
-          Your data is securely stored on your device.
+          Your data is securely stored and protected.
         </Text>
       </View>
     </View>
@@ -63,6 +66,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 16,
+    color: '#666666',
   },
   logoContainer: {
     flex: 2,

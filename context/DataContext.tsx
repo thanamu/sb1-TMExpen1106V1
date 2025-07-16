@@ -1,128 +1,93 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Platform } from 'react-native';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
-
-// Platform-specific storage implementation
-const storage = {
-  getItemAsync: async (key: string): Promise<string | null> => {
-    if (Platform.OS === 'web') {
-      return localStorage.getItem(key);
-    } else {
-      const SecureStore = require('expo-secure-store');
-      return SecureStore.getItemAsync(key);
-    }
-  },
-  setItemAsync: async (key: string, value: string): Promise<void> => {
-    if (Platform.OS === 'web') {
-      localStorage.setItem(key, value);
-      return;
-    } else {
-      const SecureStore = require('expo-secure-store');
-      return SecureStore.setItemAsync(key, value);
-    }
-  },
-  deleteItemAsync: async (key: string): Promise<void> => {
-    if (Platform.OS === 'web') {
-      localStorage.removeItem(key);
-      return;
-    } else {
-      const SecureStore = require('expo-secure-store');
-      return SecureStore.deleteItemAsync(key);
-    }
-  }
-};
-
-// Vehicle Types
-export type VehicleType = 'Car' | 'SUV' | 'UTE' | 'Pickup Truck' | 'Caravan' | 'Boat';
-export type FuelType = 'Petrol' | 'Diesel' | 'LPG' | 'EV';
-export type ConsumableType = 'Tyres' | 'Wiper Blades' | 'Engine Oil' | 'Other';
-
-export type Vehicle = {
-  id: string;
-  userId: string;
-  type: VehicleType;
-  make: string;
-  model: string;
-  year: string;
-  registrationNumber: string;
-  registrationDueDate: string;
-  insuranceDueDate: string;
-  serviceDueDate: string;
-  fuelType: FuelType;
-};
-
-export type VehicleExpense = {
-  id: string;
-  userId: string;
-  vehicleId: string;
-  type: 'Insurance' | 'Registration' | 'Service' | 'Inspection' | 'Consumable' | 'Fuel';
-  date: string;
-  amount: number;
-  hasReceipt: boolean;
-  receiptUri?: string;
-  
-  // Insurance specific
-  insuranceType?: string;
-  
-  // Registration specific
-  registrationDate?: string;
-  
-  // Inspection specific
-  inspectionDate?: string;
-  
-  // Service specific
-  serviceType?: string;
-  serviceNotes?: string;
-  
-  // Consumable specific
-  consumableType?: ConsumableType;
-  
-  // Fuel specific
-  fuelType?: FuelType;
-  liters?: number;
-  kilometers?: number;
-};
 
 // Define types
 export type Expense = {
   id: string;
-  userId: string;
+  user_id: string;
   category: 'Grocery' | 'Café' | 'Restaurant' | 'Shopping' | 'Entertainment' | 'Vehicles' | 'Other';
   amount: number;
   date: string;
-  hasReceipt: boolean;
-  receiptUri?: string;
+  has_receipt: boolean;
+  receipt_uri?: string;
   
   // Entertainment specific fields
-  entertainmentType?: string;
-  entertainmentCost?: number;
-  travelCost?: number;
-  foodCost?: number;
+  entertainment_type?: string;
+  entertainment_cost?: number;
+  travel_cost?: number;
+  food_cost?: number;
 
   // Café specific fields
-  cafeName?: string;
-  foodDescription?: string;
-  numberOfPatrons?: number;
+  cafe_name?: string;
+  food_description?: string;
+  number_of_patrons?: number;
 
   // Restaurant specific fields
-  restaurantName?: string;
-  restaurantFoodDescription?: string;
-  restaurantPatrons?: number;
+  restaurant_name?: string;
+  restaurant_food_description?: string;
+  restaurant_patrons?: number;
 
   // Shopping specific fields
-  shopName?: string;
-  itemDescription?: string;
+  shop_name?: string;
+  item_description?: string;
+  
+  created_at?: string;
+  updated_at?: string;
 };
 
 export type Activity = {
   id: string;
-  userId: string;
+  user_id: string;
   type: string;
   duration: number; // in minutes
   kilojoules: number;
   steps: number;
   date: string;
   notes?: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type Vehicle = {
+  id: string;
+  user_id: string;
+  type: 'Car' | 'SUV' | 'UTE' | 'Pickup Truck' | 'Caravan' | 'Boat';
+  make: string;
+  model: string;
+  year: string;
+  registration_number: string;
+  registration_due_date?: string;
+  insurance_due_date?: string;
+  service_due_date?: string;
+  fuel_type: 'Petrol' | 'Diesel' | 'LPG' | 'EV';
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type VehicleExpense = {
+  id: string;
+  user_id: string;
+  vehicle_id: string;
+  type: 'Insurance' | 'Registration' | 'Service' | 'Inspection' | 'Consumable' | 'Fuel';
+  date: string;
+  amount: number;
+  has_receipt: boolean;
+  receipt_uri?: string;
+  
+  // Type-specific fields
+  insurance_type?: string;
+  registration_date?: string;
+  inspection_date?: string;
+  service_type?: string;
+  service_notes?: string;
+  consumable_type?: string;
+  fuel_type?: string;
+  liters?: number;
+  kilometers?: number;
+  
+  created_at?: string;
+  updated_at?: string;
 };
 
 type ExpenseSummary = {
@@ -151,28 +116,21 @@ type DataContextType = {
   vehicleExpenses: VehicleExpense[];
   expenseSummary: ExpenseSummary;
   activitySummary: ActivitySummary;
-  addExpense: (expense: Omit<Expense, 'id' | 'userId'>) => Promise<void>;
+  addExpense: (expense: Omit<Expense, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateExpense: (id: string, expense: Partial<Expense>) => Promise<void>;
   deleteExpense: (id: string) => Promise<void>;
-  addActivity: (activity: Omit<Activity, 'id' | 'userId'>) => Promise<void>;
+  addActivity: (activity: Omit<Activity, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateActivity: (id: string, activity: Partial<Activity>) => Promise<void>;
   deleteActivity: (id: string) => Promise<void>;
-  addVehicle: (vehicle: Omit<Vehicle, 'id' | 'userId'>) => Promise<void>;
+  addVehicle: (vehicle: Omit<Vehicle, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateVehicle: (id: string, vehicle: Partial<Vehicle>) => Promise<void>;
   deleteVehicle: (id: string) => Promise<void>;
-  addVehicleExpense: (expense: Omit<VehicleExpense, 'id' | 'userId'>) => Promise<void>;
+  addVehicleExpense: (expense: Omit<VehicleExpense, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   updateVehicleExpense: (id: string, expense: Partial<VehicleExpense>) => Promise<void>;
   deleteVehicleExpense: (id: string) => Promise<void>;
   getVehicleExpenses: (vehicleId: string) => VehicleExpense[];
   isLoading: boolean;
-};
-
-// Helper function to generate unique IDs
-let idCounter = 0;
-const generateUniqueId = () => {
-  const timestamp = Date.now();
-  const counter = ++idCounter;
-  return `${timestamp}-${counter}-${Math.random().toString(36).substr(2, 9)}`;
+  refreshData: () => Promise<void>;
 };
 
 // Helper functions for date calculations
@@ -239,51 +197,45 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   // Load data when user changes
-  useEffect(() => {
-    const loadData = async () => {
-      if (!user) {
-        setExpenses([]);
-        setActivities([]);
-        setVehicles([]);
-        setVehicleExpenses([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      try {
-        setIsLoading(true);
-        
-        // Load expenses
-        const expensesKey = `expenses_${user.id}`;
-        const expensesJson = await storage.getItemAsync(expensesKey);
-        const loadedExpenses = expensesJson ? JSON.parse(expensesJson) : [];
-        setExpenses(loadedExpenses);
-        
-        // Load activities
-        const activitiesKey = `activities_${user.id}`;
-        const activitiesJson = await storage.getItemAsync(activitiesKey);
-        const loadedActivities = activitiesJson ? JSON.parse(activitiesJson) : [];
-        setActivities(loadedActivities);
-        
-        // Load vehicles
-        const vehiclesKey = `vehicles_${user.id}`;
-        const vehiclesJson = await storage.getItemAsync(vehiclesKey);
-        const loadedVehicles = vehiclesJson ? JSON.parse(vehiclesJson) : [];
-        setVehicles(loadedVehicles);
-        
-        // Load vehicle expenses
-        const vehicleExpensesKey = `vehicle_expenses_${user.id}`;
-        const vehicleExpensesJson = await storage.getItemAsync(vehicleExpensesKey);
-        const loadedVehicleExpenses = vehicleExpensesJson ? JSON.parse(vehicleExpensesJson) : [];
-        setVehicleExpenses(loadedVehicleExpenses);
-      } catch (error) {
-        console.error('Error loading data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const refreshData = async () => {
+    if (!user) {
+      setExpenses([]);
+      setActivities([]);
+      setVehicles([]);
+      setVehicleExpenses([]);
+      setIsLoading(false);
+      return;
+    }
     
-    loadData();
+    try {
+      setIsLoading(true);
+      
+      // Load all data in parallel
+      const [expensesResult, activitiesResult, vehiclesResult, vehicleExpensesResult] = await Promise.all([
+        supabase.from('expenses').select('*').eq('user_id', user.id).order('date', { ascending: false }),
+        supabase.from('activities').select('*').eq('user_id', user.id).order('date', { ascending: false }),
+        supabase.from('vehicles').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('vehicle_expenses').select('*').eq('user_id', user.id).order('date', { ascending: false })
+      ]);
+      
+      if (expensesResult.error) throw expensesResult.error;
+      if (activitiesResult.error) throw activitiesResult.error;
+      if (vehiclesResult.error) throw vehiclesResult.error;
+      if (vehicleExpensesResult.error) throw vehicleExpensesResult.error;
+      
+      setExpenses(expensesResult.data || []);
+      setActivities(activitiesResult.data || []);
+      setVehicles(vehiclesResult.data || []);
+      setVehicleExpenses(vehicleExpensesResult.data || []);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refreshData();
   }, [user]);
 
   // Calculate summaries whenever expenses or activities change
@@ -346,24 +298,22 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [expenses, activities, user]);
 
   // CRUD operations for expenses
-  const addExpense = async (expense: Omit<Expense, 'id' | 'userId'>) => {
+  const addExpense = async (expense: Omit<Expense, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
     
     try {
-      const newExpense: Expense = {
-        ...expense,
-        id: generateUniqueId(),
-        userId: user.id
-      };
+      const { data, error } = await supabase
+        .from('expenses')
+        .insert([{ ...expense, user_id: user.id }])
+        .select()
+        .single();
       
-      const updatedExpenses = [...expenses, newExpense];
-      setExpenses(updatedExpenses);
+      if (error) throw error;
       
-      // Save to storage
-      const expensesKey = `expenses_${user.id}`;
-      await storage.setItemAsync(expensesKey, JSON.stringify(updatedExpenses));
+      setExpenses(prev => [data, ...prev]);
     } catch (error) {
       console.error('Error adding expense:', error);
+      throw error;
     }
   };
   
@@ -371,17 +321,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      const updatedExpenses = expenses.map(expense => 
-        expense.id === id ? { ...expense, ...expenseUpdate } : expense
-      );
+      const { data, error } = await supabase
+        .from('expenses')
+        .update({ ...expenseUpdate, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
       
-      setExpenses(updatedExpenses);
+      if (error) throw error;
       
-      // Save to storage
-      const expensesKey = `expenses_${user.id}`;
-      await storage.setItemAsync(expensesKey, JSON.stringify(updatedExpenses));
+      setExpenses(prev => prev.map(expense => expense.id === id ? data : expense));
     } catch (error) {
       console.error('Error updating expense:', error);
+      throw error;
     }
   };
   
@@ -389,36 +342,38 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      const updatedExpenses = expenses.filter(expense => expense.id !== id);
-      setExpenses(updatedExpenses);
+      const { error } = await supabase
+        .from('expenses')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
       
-      // Save to storage
-      const expensesKey = `expenses_${user.id}`;
-      await storage.setItemAsync(expensesKey, JSON.stringify(updatedExpenses));
+      if (error) throw error;
+      
+      setExpenses(prev => prev.filter(expense => expense.id !== id));
     } catch (error) {
       console.error('Error deleting expense:', error);
+      throw error;
     }
   };
   
   // CRUD operations for activities
-  const addActivity = async (activity: Omit<Activity, 'id' | 'userId'>) => {
+  const addActivity = async (activity: Omit<Activity, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
     
     try {
-      const newActivity: Activity = {
-        ...activity,
-        id: generateUniqueId(),
-        userId: user.id
-      };
+      const { data, error } = await supabase
+        .from('activities')
+        .insert([{ ...activity, user_id: user.id }])
+        .select()
+        .single();
       
-      const updatedActivities = [...activities, newActivity];
-      setActivities(updatedActivities);
+      if (error) throw error;
       
-      // Save to storage
-      const activitiesKey = `activities_${user.id}`;
-      await storage.setItemAsync(activitiesKey, JSON.stringify(updatedActivities));
+      setActivities(prev => [data, ...prev]);
     } catch (error) {
       console.error('Error adding activity:', error);
+      throw error;
     }
   };
   
@@ -426,17 +381,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      const updatedActivities = activities.map(activity => 
-        activity.id === id ? { ...activity, ...activityUpdate } : activity
-      );
+      const { data, error } = await supabase
+        .from('activities')
+        .update({ ...activityUpdate, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
       
-      setActivities(updatedActivities);
+      if (error) throw error;
       
-      // Save to storage
-      const activitiesKey = `activities_${user.id}`;
-      await storage.setItemAsync(activitiesKey, JSON.stringify(updatedActivities));
+      setActivities(prev => prev.map(activity => activity.id === id ? data : activity));
     } catch (error) {
       console.error('Error updating activity:', error);
+      throw error;
     }
   };
   
@@ -444,36 +402,38 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      const updatedActivities = activities.filter(activity => activity.id !== id);
-      setActivities(updatedActivities);
+      const { error } = await supabase
+        .from('activities')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
       
-      // Save to storage
-      const activitiesKey = `activities_${user.id}`;
-      await storage.setItemAsync(activitiesKey, JSON.stringify(updatedActivities));
+      if (error) throw error;
+      
+      setActivities(prev => prev.filter(activity => activity.id !== id));
     } catch (error) {
       console.error('Error deleting activity:', error);
+      throw error;
     }
   };
 
   // Vehicle CRUD operations
-  const addVehicle = async (vehicle: Omit<Vehicle, 'id' | 'userId'>) => {
+  const addVehicle = async (vehicle: Omit<Vehicle, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
     
     try {
-      const newVehicle: Vehicle = {
-        ...vehicle,
-        id: generateUniqueId(),
-        userId: user.id
-      };
+      const { data, error } = await supabase
+        .from('vehicles')
+        .insert([{ ...vehicle, user_id: user.id }])
+        .select()
+        .single();
       
-      const updatedVehicles = [...vehicles, newVehicle];
-      setVehicles(updatedVehicles);
+      if (error) throw error;
       
-      // Save to storage
-      const vehiclesKey = `vehicles_${user.id}`;
-      await storage.setItemAsync(vehiclesKey, JSON.stringify(updatedVehicles));
+      setVehicles(prev => [data, ...prev]);
     } catch (error) {
       console.error('Error adding vehicle:', error);
+      throw error;
     }
   };
   
@@ -481,17 +441,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      const updatedVehicles = vehicles.map(vehicle => 
-        vehicle.id === id ? { ...vehicle, ...vehicleUpdate } : vehicle
-      );
+      const { data, error } = await supabase
+        .from('vehicles')
+        .update({ ...vehicleUpdate, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
       
-      setVehicles(updatedVehicles);
+      if (error) throw error;
       
-      // Save to storage
-      const vehiclesKey = `vehicles_${user.id}`;
-      await storage.setItemAsync(vehiclesKey, JSON.stringify(updatedVehicles));
+      setVehicles(prev => prev.map(vehicle => vehicle.id === id ? data : vehicle));
     } catch (error) {
       console.error('Error updating vehicle:', error);
+      throw error;
     }
   };
   
@@ -499,45 +462,36 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      const updatedVehicles = vehicles.filter(vehicle => vehicle.id !== id);
-      setVehicles(updatedVehicles);
+      // Delete vehicle and related expenses in a transaction
+      const { error } = await supabase.rpc('delete_vehicle_with_expenses', { vehicle_id: id, user_id: user.id });
       
-      // Also delete related vehicle expenses
-      const updatedVehicleExpenses = vehicleExpenses.filter(
-        expense => expense.vehicleId !== id
-      );
-      setVehicleExpenses(updatedVehicleExpenses);
+      if (error) throw error;
       
-      // Save to storage
-      const vehiclesKey = `vehicles_${user.id}`;
-      await storage.setItemAsync(vehiclesKey, JSON.stringify(updatedVehicles));
-      
-      const vehicleExpensesKey = `vehicle_expenses_${user.id}`;
-      await storage.setItemAsync(vehicleExpensesKey, JSON.stringify(updatedVehicleExpenses));
+      setVehicles(prev => prev.filter(vehicle => vehicle.id !== id));
+      setVehicleExpenses(prev => prev.filter(expense => expense.vehicle_id !== id));
     } catch (error) {
       console.error('Error deleting vehicle:', error);
+      throw error;
     }
   };
   
   // Vehicle Expense CRUD operations
-  const addVehicleExpense = async (expense: Omit<VehicleExpense, 'id' | 'userId'>) => {
+  const addVehicleExpense = async (expense: Omit<VehicleExpense, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
     
     try {
-      const newExpense: VehicleExpense = {
-        ...expense,
-        id: generateUniqueId(),
-        userId: user.id
-      };
+      const { data, error } = await supabase
+        .from('vehicle_expenses')
+        .insert([{ ...expense, user_id: user.id }])
+        .select()
+        .single();
       
-      const updatedExpenses = [...vehicleExpenses, newExpense];
-      setVehicleExpenses(updatedExpenses);
+      if (error) throw error;
       
-      // Save to storage
-      const vehicleExpensesKey = `vehicle_expenses_${user.id}`;
-      await storage.setItemAsync(vehicleExpensesKey, JSON.stringify(updatedExpenses));
+      setVehicleExpenses(prev => [data, ...prev]);
     } catch (error) {
       console.error('Error adding vehicle expense:', error);
+      throw error;
     }
   };
   
@@ -545,17 +499,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      const updatedExpenses = vehicleExpenses.map(expense => 
-        expense.id === id ? { ...expense, ...expenseUpdate } : expense
-      );
+      const { data, error } = await supabase
+        .from('vehicle_expenses')
+        .update({ ...expenseUpdate, updated_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
       
-      setVehicleExpenses(updatedExpenses);
+      if (error) throw error;
       
-      // Save to storage
-      const vehicleExpensesKey = `vehicle_expenses_${user.id}`;
-      await storage.setItemAsync(vehicleExpensesKey, JSON.stringify(updatedExpenses));
+      setVehicleExpenses(prev => prev.map(expense => expense.id === id ? data : expense));
     } catch (error) {
       console.error('Error updating vehicle expense:', error);
+      throw error;
     }
   };
   
@@ -563,20 +520,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      const updatedExpenses = vehicleExpenses.filter(expense => expense.id !== id);
-      setVehicleExpenses(updatedExpenses);
+      const { error } = await supabase
+        .from('vehicle_expenses')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
       
-      // Save to storage
-      const vehicleExpensesKey = `vehicle_expenses_${user.id}`;
-      await storage.setItemAsync(vehicleExpensesKey, JSON.stringify(updatedExpenses));
+      if (error) throw error;
+      
+      setVehicleExpenses(prev => prev.filter(expense => expense.id !== id));
     } catch (error) {
       console.error('Error deleting vehicle expense:', error);
+      throw error;
     }
   };
 
   // Helper function to get expenses for a specific vehicle
   const getVehicleExpenses = (vehicleId: string): VehicleExpense[] => {
-    return vehicleExpenses.filter(expense => expense.vehicleId === vehicleId);
+    return vehicleExpenses.filter(expense => expense.vehicle_id === vehicleId);
   };
 
   return (
@@ -601,7 +562,8 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateVehicleExpense,
         deleteVehicleExpense,
         getVehicleExpenses,
-        isLoading
+        isLoading,
+        refreshData
       }}
     >
       {children}

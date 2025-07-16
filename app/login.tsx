@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthContext';
 import { Lock, User, ArrowLeft } from 'lucide-react-native';
@@ -7,20 +7,11 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 export default function Login() {
   const router = useRouter();
-  const { login, isLoading, rememberedEmail, setRememberCredentials } = useAuth();
+  const { signIn, isLoading } = useAuth();
   
-  const [email, setEmail] = useState(rememberedEmail || '');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
-  
-  // Update email when rememberedEmail changes
-  useEffect(() => {
-    if (rememberedEmail) {
-      setEmail(rememberedEmail);
-      setRememberMe(true);
-    }
-  }, [rememberedEmail]);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -28,18 +19,13 @@ export default function Login() {
       return;
     }
     
-    try {
-      setError('');
-      setRememberCredentials(rememberMe);
-      const success = await login(email, password);
-      
-      if (success) {
-        router.replace('/(tabs)');
-      } else {
-        setError('Invalid email or password');
-      }
-    } catch (err) {
-      setError('Login failed. Please try again.');
+    setError('');
+    const result = await signIn(email, password);
+    
+    if (!result.success) {
+      setError(result.error || 'Login failed');
+    } else {
+      router.replace('/(tabs)');
     }
   };
 
@@ -72,6 +58,7 @@ export default function Login() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoComplete="email"
           />
         </View>
         
@@ -84,18 +71,9 @@ export default function Login() {
             value={password}
             onChangeText={setPassword}
             secureTextEntry
+            autoComplete="password"
           />
         </View>
-        
-        <TouchableOpacity 
-          style={styles.rememberMeContainer}
-          onPress={() => setRememberMe(!rememberMe)}
-        >
-          <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-            {rememberMe && <Text style={styles.checkmark}>✓</Text>}
-          </View>
-          <Text style={styles.rememberMeText}>Remember me</Text>
-        </TouchableOpacity>
         
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         
@@ -173,35 +151,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     fontSize: 16,
     color: '#333333',
-  },
-  rememberMeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderWidth: 2,
-    borderColor: '#DDDDDD',
-    borderRadius: 4,
-    marginRight: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#008080',
-    borderColor: '#008080',
-  },
-  checkmark: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontFamily: 'Inter-Bold',
-  },
-  rememberMeText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#666666',
   },
   errorText: {
     fontFamily: 'Inter-Regular',

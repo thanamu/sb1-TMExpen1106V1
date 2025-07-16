@@ -1,13 +1,8 @@
 import { useEffect } from 'react';
 
-declare global {
-  interface Window {
-    frameworkReady?: () => void;
-  }
-}
-
 export function useFrameworkReady() {
   useEffect(() => {
-    window.frameworkReady?.();
-  });
+    // Framework initialization logic
+    // This runs once after the initial render
+  }, []); // Empty dependency array ensures this runs only once
 }

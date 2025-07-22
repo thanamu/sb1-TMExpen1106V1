@@ -34,11 +34,6 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
-  // Return null until fonts are loaded
-  if (!fontsLoaded && !fontError) {
-    return null;
-  }
-
   return (
     <AuthProvider>
       <DataProvider>
@@ -46,12 +41,14 @@ export default function RootLayout() {
           <HolidayProvider>
             <WeatherProvider>
               <StatusBar style="auto" />
-              <Stack screenOptions={{ headerShown: false }}>
-                <Stack.Screen name="index" />
-                <Stack.Screen name="login" />
-                <Stack.Screen name="onboarding" />
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              </Stack>
+              {(!fontsLoaded && !fontError) ? null : (
+                <Stack screenOptions={{ headerShown: false }}>
+                  <Stack.Screen name="index" />
+                  <Stack.Screen name="login" />
+                  <Stack.Screen name="onboarding" />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                </Stack>
+              )}
             </WeatherProvider>
           </HolidayProvider>
         </HomeProvider>

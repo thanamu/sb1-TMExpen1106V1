@@ -1,34 +1,10 @@
-import { useEffect } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@/context/AuthContext';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
-
-  useEffect(() => {
-    // If already authenticated, redirect to main app
-    if (isAuthenticated && !isLoading) {
-      router.replace('/(tabs)');
-    }
-  }, [isAuthenticated, isLoading, router]);
-
-  // Show loading while checking auth status
-  if (isLoading) {
-    return (
-      <View style={[styles.container, styles.loadingContainer]}>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
-  }
-
-  // Don't show anything if user is authenticated (will redirect)
-  if (isAuthenticated) {
-    return null;
-  }
 
   const handleLoginPress = () => {
     router.push('/login');
@@ -66,15 +42,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
-    color: '#666666',
   },
   logoContainer: {
     flex: 2,
